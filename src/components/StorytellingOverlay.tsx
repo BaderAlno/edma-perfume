@@ -1,9 +1,17 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useScroll, useTransform, motion } from "framer-motion";
+import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
+import { translations } from "@/i18n/translations";
+import ScrambleTitle from "@/components/ScrambleTitle";
+import ParticleBackground from "@/components/ParticleBackground";
 
 export default function StorytellingOverlay() {
     const { scrollYProgress } = useScroll();
+    const { language } = useLanguage();
+    const t = translations.storyOverlay;
+    const tBtn = translations.productsSection;
 
     // Opacities mapped to scroll percentages
     // 0-15% (0.0 to 0.15)
@@ -32,14 +40,46 @@ export default function StorytellingOverlay() {
             {/* 1. Hero / Intro */}
             <motion.div
                 style={{ opacity: heroOpacity, y: heroY }}
-                className="sticky top-0 h-screen flex flex-col items-center justify-center text-center px-6"
+                className="sticky top-0 h-screen flex flex-col items-center justify-center text-center px-6 pointer-events-auto relative overflow-hidden"
             >
-                <h1 className="font-serif text-6xl md:text-8xl lg:text-9xl text-white/90 tracking-widest text-glow mb-6">
-                    ELINOR
-                </h1>
-                <p className="font-light text-lg md:text-2xl text-[#EBE5D9]/70 tracking-wide max-w-xl">
-                    Invisible elegance, unforgettable presence.
-                </p>
+                <ParticleBackground />
+
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                    className="flex flex-col items-center gap-6 md:gap-8"
+                >
+                    <h1 className="flex items-center justify-center font-serif text-5xl md:text-7xl lg:text-8xl text-white/95 tracking-[0.2em] drop-shadow-[0_0_25px_rgba(255,255,255,0.4)] h-[1.2em]">
+                        <ScrambleTitle />
+                    </h1>
+
+                    <div className="flex flex-col gap-4 items-center text-center w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                        <p className={language === 'ar' ? "font-serif text-lg md:text-2xl text-[#EBE5D9]/95 tracking-wide max-w-2xl leading-relaxed drop-shadow-sm" : "font-serif italic text-lg md:text-2xl text-[#EBE5D9]/95 tracking-wide max-w-2xl leading-relaxed drop-shadow-sm"}>
+                            {t.quote[language]}
+                        </p>
+                        <p className={language === 'ar' ? "font-light text-xs md:text-sm text-[#D4AF37]/90 tracking-widest pb-6" : "font-light text-[10px] md:text-xs text-[#D4AF37]/90 tracking-[0.3em] uppercase pb-6"}>
+                            {t.subQuote[language]}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                        <Link
+                            href="/shop"
+                            className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-[#D4AF37] to-[#FFBF00] text-[#0A0806] rounded-full font-medium tracking-wide transition-all hover:scale-105 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                        >
+                            {t.shopCollection[language]}
+                        </Link>
+                        <a
+                            href="https://wa.me/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto px-10 py-4 border border-white/20 text-white/90 rounded-full font-light tracking-wide transition-colors hover:bg-white/10 hover:border-white/40 backdrop-blur-sm"
+                        >
+                            {tBtn.whatsapp[language]}
+                        </a>
+                    </div>
+                </motion.div>
             </motion.div>
 
             {/* 2. The Reveal & Top Notes */}
@@ -73,10 +113,10 @@ export default function StorytellingOverlay() {
                 style={{ opacity: baseOpacity, y: baseY }}
                 className="sticky top-0 h-screen flex flex-col justify-end pb-40 lg:pb-52 items-start px-8 md:px-24 lg:px-40"
             >
-                <div className="max-w-md pointer-events-auto">
-                    <h2 className="font-serif text-4xl md:text-5xl text-white/90 mb-6 text-glow">A Gourmand Masterpiece.</h2>
+                <div className="max-w-md pointer-events-auto" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                    <h2 className={language === 'ar' ? "font-arabic text-4xl md:text-5xl text-white/90 mb-6 text-glow" : "font-serif text-4xl md:text-5xl text-white/90 mb-6 text-glow"}>{t.gourmand[language]}</h2>
                     <p className="text-[#EBE5D9]/70 font-light leading-relaxed text-lg">
-                        A sweet escape into a world of elegance. Rich praline, warm vanilla, and deep patchouli leave a trail that lingers long after you&apos;re gone.
+                        {t.gourmandDesc[language]}
                     </p>
                 </div>
             </motion.div>
@@ -86,20 +126,20 @@ export default function StorytellingOverlay() {
                 style={{ opacity: ctaOpacity, y: ctaY }}
                 className="sticky top-0 h-screen flex flex-col items-center justify-center text-center px-6"
             >
-                <div className="pointer-events-auto max-w-4xl flex flex-col items-center">
-                    <h2 className="font-serif text-5xl md:text-7xl text-white/90 mb-6 text-glow tracking-wide">
-                        One fragrance.<br className="hidden md:block" /> A thousand stories.
+                <div className="pointer-events-auto max-w-4xl flex flex-col items-center" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                    <h2 className={language === 'ar' ? "font-arabic text-5xl md:text-7xl text-white/90 mb-6 text-glow tracking-wide" : "font-serif text-5xl md:text-7xl text-white/90 mb-6 text-glow tracking-wide"}>
+                        {t.oneFragrance[language]}<br className="hidden md:block" /> {t.thousandStories[language]}
                     </h2>
                     <p className="text-[#EBE5D9]/80 font-light text-xl md:text-2xl mb-12">
-                        Elinor Eau de Parfum. Because you deserve to stand out.
+                        {t.deserveStandOut[language]}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-6">
-                        <button className="px-8 py-4 bg-gradient-to-r from-[#D4AF37] to-[#FFBF00] text-[#0A0806] rounded-full font-medium tracking-wide transition-transform hover:scale-105 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-                            Experience Elinor
-                        </button>
-                        <button className="px-8 py-4 border border-white/20 text-white/90 rounded-full font-light tracking-wide transition-colors hover:bg-white/5 hover:border-white/40">
-                            View Fragrance Profile
-                        </button>
+                        <Link href="/shop" className="px-8 py-4 bg-gradient-to-r from-[#D4AF37] to-[#FFBF00] text-[#0A0806] rounded-full font-medium tracking-wide transition-transform hover:scale-105 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+                            {t.experienceElinor[language]}
+                        </Link>
+                        <Link href="/#products" className="px-8 py-4 border border-white/20 text-white/90 rounded-full font-light tracking-wide transition-colors hover:bg-white/5 hover:border-white/40">
+                            {t.viewProfile[language]}
+                        </Link>
                     </div>
                 </div>
             </motion.div>

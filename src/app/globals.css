@@ -18,10 +18,17 @@
 :root {
   color-scheme: dark;
   --color-accent-gold-base: #D4AF37;
+
+  /* Luxury spacing scale */
+  --space-section: clamp(5rem, 12vw, 9rem);
+  --space-section-sm: clamp(3rem, 8vw, 6rem);
 }
 
+/* ── Baseline resets ─────────────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -29,21 +36,210 @@ body {
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+  /* Prevent horizontal overflow */
+  overflow-x: hidden;
 }
 
+/* ── Typography: English ─────────────────────────────────────────────────── */
+.font-serif {
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  letter-spacing: 0.01em;
+}
+
+/* Small tracking utility for luxury feel */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* ── Typography: Arabic ──────────────────────────────────────────────────── */
 .font-arabic {
   font-family: 'Amiri', 'Noto Naskh Arabic', 'Arial', serif;
-  font-feature-settings: "kern" 1;
+  font-feature-settings: "kern" 1, "calt" 1;
   text-rendering: optimizeLegibility;
+  line-height: 1.85;
+  word-spacing: 0.04em;
 }
 
+/* Language-context font remapping */
+body.lang-en,
+.lang-en .font-sans {
+  font-family: var(--font-inter), sans-serif;
+  line-height: 1.6;
+}
+
+body.lang-ar,
+.lang-ar .font-sans {
+  font-family: 'Noto Naskh Arabic', sans-serif;
+  line-height: 1.85;
+}
+
+/* In English mode, Arabic elements get Playfair for a unified luxury feel */
+.lang-en .font-arabic {
+  font-family: var(--font-playfair), serif;
+}
+
+/* ── Text selection ──────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(201, 168, 76, 0.22);
+  color: #EBE5D9;
+}
+::-moz-selection {
+  background: rgba(201, 168, 76, 0.22);
+  color: #EBE5D9;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0806;
+}
+::-webkit-scrollbar-thumb {
+  background: #1A0E08;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.35);
+}
+
+/* ── Accessibility: Skip link ────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: #C9A84C;
+  color: #0A0806;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0 0 8px 8px;
+  z-index: 9999;
+  transition: top 0.2s ease;
+  font-family: var(--font-inter), sans-serif;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Accessibility: Focus rings ──────────────────────────────────────────── */
+/* Reset browser default outline, replace with gold ring for keyboard nav */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid rgba(201, 168, 76, 0.7);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Rounded elements get a pill-shaped ring */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #C9A84C;
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+/* ── Micro-interaction utilities ─────────────────────────────────────────── */
+
+/* Gold glow on hover — apply to luxury buttons */
+.btn-luxury {
+  transition:
+    transform  0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    filter     0.3s ease;
+}
+.btn-luxury:hover {
+  transform:  translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(201, 168, 76, 0.30);
+}
+.btn-luxury:active {
+  transform:  translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* Ghost / outline button hover */
+.btn-ghost-gold {
+  transition:
+    background-color 0.25s ease,
+    border-color     0.25s ease,
+    box-shadow       0.25s ease,
+    transform        0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.btn-ghost-gold:hover {
+  background-color: rgba(201, 168, 76, 0.08);
+  border-color:     rgba(201, 168, 76, 0.5);
+  box-shadow:       0 0 20px rgba(201, 168, 76, 0.12), inset 0 0 20px rgba(201, 168, 76, 0.04);
+  transform:        translateY(-1px);
+}
+
+/* Nav link — animated gold underline slide-in */
+.nav-link {
+  position: relative;
+  padding-bottom: 2px;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #C9A84C 40%, #E5C84A 60%, transparent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-link:hover::after,
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+.nav-link[aria-current="page"] {
+  color: rgba(201, 168, 76, 0.9);
+}
+
+/* Product card hover enhancement */
+.card-luxury {
+  transition:
+    border-color 0.4s ease,
+    box-shadow   0.4s ease,
+    transform    0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.card-luxury:hover {
+  border-color: rgba(201, 168, 76, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(201, 168, 76, 0.08),
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(201, 168, 76, 0.06);
+  transform: translateY(-3px);
+}
+
+/* ── Scrollbar thin utility ──────────────────────────────────────────────── */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #1A0E08 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #1A0E08; border-radius: 2px; }
+
+/* ── Text utilities ──────────────────────────────────────────────────────── */
 @layer utilities {
   .text-glow {
     text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
   }
 
   .text-glow-warm {
-    text-shadow: 0 0 30px rgba(201, 162, 39, 0.35), 0 0 60px rgba(201, 162, 39, 0.15);
+    text-shadow:
+      0 0 30px rgba(201, 162, 39, 0.35),
+      0 0 60px rgba(201, 162, 39, 0.15);
   }
 
   .gold-shimmer {
@@ -54,14 +250,107 @@ body {
     background-clip: text;
     animation: shimmer 3s linear infinite;
   }
+
+  /* Luxury section whitespace */
+  .section-padding {
+    padding-block: var(--space-section);
+  }
+  .section-padding-sm {
+    padding-block: var(--space-section-sm);
+  }
 }
 
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  0% {
-    background-position: 0% center;
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes gold-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(201, 168, 76, 0.12); }
+}
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+  .animate-gold-pulse {
+    animation: gold-pulse 2.5s ease-in-out infinite;
+  }
+}
+
+/* ── Scroll-triggered reveal animations ─────────────────────────────────── */
+.reveal-text {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity   0.75s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+.reveal-text.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-image {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity   0.85s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+.reveal-image.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.reveal-fade {
+  opacity: 0;
+  transition: opacity 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+.reveal-fade.is-visible {
+  opacity: 1;
+}
+
+/* ── Custom cursor (desktop only) ────────────────────────────────────────── */
+@media (pointer: fine) {
+  body,
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  .interactive {
+    cursor: none !important;
+  }
+}
+
+/* ── Reduced motion: respect user preference ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1     !important;
+    transition-duration:      0.01ms !important;
+    scroll-behavior:          auto   !important;
   }
 
-  100% {
-    background-position: 200% center;
+  .reveal-text,
+  .reveal-image,
+  .reveal-fade {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

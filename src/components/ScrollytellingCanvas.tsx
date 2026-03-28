@@ -1,117 +1,110 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 
 const TOTAL_FRAMES = 240;
 
+function drawImageCentered(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    canvas: HTMLCanvasElement
+) {
+    const canvasRatio = canvas.width / canvas.height;
+    const iW = img.naturalWidth || img.width;
+    const iH = img.naturalHeight || img.height;
+    if (!iW || !iH) return;
+
+    const imgRatio = iW / iH;
+    let drawWidth: number, drawHeight: number, offsetX: number, offsetY: number;
+
+    if (canvasRatio > imgRatio) {
+        drawHeight = canvas.height;
+        drawWidth = iW * (canvas.height / iH);
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+    } else {
+        drawWidth = canvas.width;
+        drawHeight = iH * (canvas.width / iW);
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+    }
+
+    // Fill background
+    ctx.fillStyle = "#0A0806";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Warm radial gradient
+    const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2,
+        Math.max(canvas.width, canvas.height) * 0.5
+    );
+    gradient.addColorStop(0, "rgba(20, 16, 12, 0.4)");
+    gradient.addColorStop(1, "rgba(10, 8, 6, 0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+}
+
 export default function ScrollytellingCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [images, setImages] = useState<HTMLImageElement[]>([]);
+    // Use refs instead of state — avoids stale-closure bug in useMotionValueEvent
+    const imagesRef = useRef<HTMLImageElement[]>([]);
+    const loadedRef = useRef<boolean[]>(new Array(TOTAL_FRAMES).fill(false));
+    const currentFrameRef = useRef(0);
+
     const { scrollYProgress } = useScroll();
-
-    // Load images
-    useEffect(() => {
-        const loadedImages: HTMLImageElement[] = [];
-        let loadedCount = 0;
-
-        for (let i = 1; i <= TOTAL_FRAMES; i++) {
-            const img = new Image();
-            const frameNumber = i.toString().padStart(3, "0");
-            img.src = `/sequence/ezgif-frame-${frameNumber}.jpg`;
-            img.onload = () => {
-                loadedCount++;
-                // Draw the first frame perfectly once loaded
-                if (loadedCount === 1 && canvasRef.current && i === 1) {
-                    const ctx = canvasRef.current.getContext("2d");
-                    if (ctx) {
-                        drawImageCentered(ctx, img, canvasRef.current);
-                    }
-                }
-            };
-            loadedImages.push(img);
-        }
-        setImages(loadedImages);
-    }, []);
-
-    // Set the canvas to window size and handle resizing
-    useEffect(() => {
-        const initCanvas = () => {
-            if (canvasRef.current) {
-                canvasRef.current.width = window.innerWidth;
-                canvasRef.current.height = window.innerHeight;
-            }
-        };
-
-        initCanvas();
-
-        const handleResize = () => {
-            initCanvas();
-            if (canvasRef.current && images.length > 0) {
-                const index = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(frameIndex.get())));
-                const ctx = canvasRef.current.getContext("2d");
-                const img = images[index];
-                if (ctx && img && img.complete) {
-                    drawImageCentered(ctx, img, canvasRef.current);
-                }
-            }
-        };
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, [images]);
-
-    // Frame index based on scroll
     const frameIndex = useTransform(scrollYProgress, [0, 1], [0, TOTAL_FRAMES - 1]);
 
+    // Canvas sizing
+    useEffect(() => {
+        const resize = () => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Redraw current frame after resize
+            const img = imagesRef.current[currentFrameRef.current];
+            if (img && loadedRef.current[currentFrameRef.current]) {
+                const ctx = canvas.getContext("2d");
+                if (ctx) drawImageCentered(ctx, img, canvas);
+            }
+        };
+        resize();
+        window.addEventListener("resize", resize);
+        return () => window.removeEventListener("resize", resize);
+    }, []);
+
+    // Pre-load all frames into refs
+    useEffect(() => {
+        const imgs: HTMLImageElement[] = Array.from({ length: TOTAL_FRAMES }, (_, i) => {
+            const img = new window.Image();
+            img.src = `/sequence/ezgif-frame-${(i + 1).toString().padStart(3, "0")}.jpg`;
+            img.onload = () => {
+                loadedRef.current[i] = true;
+                // Paint frame 0 as soon as it arrives
+                if (i === 0 && canvasRef.current) {
+                    const ctx = canvasRef.current.getContext("2d");
+                    if (ctx) drawImageCentered(ctx, img, canvasRef.current);
+                }
+            };
+            return img;
+        });
+        imagesRef.current = imgs;
+    }, []);
+
+    // Paint the correct frame on scroll
     useMotionValueEvent(frameIndex, "change", (latest) => {
-        if (!canvasRef.current || images.length === 0) return;
-        const index = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(latest)));
-        const img = images[index];
-        const ctx = canvasRef.current.getContext("2d");
-        if (ctx && img && img.complete) {
-            drawImageCentered(ctx, img, canvasRef.current);
-        }
+        const idx = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.round(latest)));
+        currentFrameRef.current = idx;
+        const canvas = canvasRef.current;
+        const img = imagesRef.current[idx];
+        if (!canvas || !img || !loadedRef.current[idx]) return;
+        const ctx = canvas.getContext("2d");
+        if (ctx) drawImageCentered(ctx, img, canvas);
     });
-
-    // Utility to draw the image centered without distorting AR
-    const drawImageCentered = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, canvas: HTMLCanvasElement) => {
-        const canvasRatio = canvas.width / canvas.height;
-        const imgRatio = img.width / img.height;
-
-        let drawWidth, drawHeight, offsetX, offsetY;
-
-        // We scale the image down so it entirely fits if it's too large, but typically we want it to cover the screen vertically
-        if (canvasRatio > imgRatio) {
-            // Content fits by height constraint
-            drawHeight = canvas.height;
-            drawWidth = img.width * (canvas.height / img.height);
-            offsetX = (canvas.width - drawWidth) / 2;
-            offsetY = 0;
-        } else {
-            // Content fits by width constraint (e.g. mobile)
-            drawWidth = canvas.width;
-            drawHeight = img.height * (canvas.width / img.width);
-            offsetX = 0;
-            offsetY = (canvas.height - drawHeight) / 2;
-        }
-
-        // Fill background with the pure dark theme color to perfectly blend image edges
-        ctx.fillStyle = "#0A0806";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Optional: Draw a subtle warm radial gradient in the center behind the bottle
-        const gradient = ctx.createRadialGradient(
-            canvas.width / 2, canvas.height / 2, 0,
-            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.5
-        );
-        gradient.addColorStop(0, "rgba(20, 16, 12, 0.4)");
-        gradient.addColorStop(1, "rgba(10, 8, 6, 0)");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-    };
 
     return (
         <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#0A0806] -z-10">

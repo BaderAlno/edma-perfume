@@ -2,10 +2,14 @@ import Navbar from "@/components/Navbar";
 import ScrollytellingCanvas from "@/components/ScrollytellingCanvas";
 import StorytellingOverlay from "@/components/StorytellingOverlay";
 import HeroSection from "@/components/HeroSection";
+import MarqueeTicker from "@/components/MarqueeTicker";
 import InstagramGrid from "@/components/InstagramGrid";
 import ProductSection from "@/components/ProductSection";
 import BrandStory from "@/components/BrandStory";
+import TestimonialsSection from "@/components/TestimonialsSection";
 import CTASection from "@/components/CTASection";
+import StickyCartBar from "@/components/StickyCartBar";
+import CinematicSection from "@/components/CinematicSection";
 
 export default function Home() {
   return (
@@ -24,10 +28,17 @@ export default function Home() {
 
       {/* Arabic Luxury Sections */}
       <HeroSection />
+      <MarqueeTicker />
       <InstagramGrid />
+      {/* Scroll-driven cinematic video — place your video at public/hero-cinematic.mp4 */}
+      <CinematicSection />
       <ProductSection />
       <BrandStory />
+      <TestimonialsSection />
       <CTASection />
+
+      {/* Global Sticky Cart Bar */}
+      <StickyCartBar />
     </main>
   );
 }
