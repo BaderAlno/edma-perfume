@@ -54,7 +54,7 @@ export async function updateSetting(key: string, value: string): Promise<boolean
 
     // Specifically revalidate the announcement tag if it's the announcement text
     if (key === 'announcement_text') {
-        revalidateTag('settings');
+        revalidateTag('settings', 'default');
     }
 
     return true;
@@ -81,7 +81,7 @@ export async function updateSettings(settings: Record<string, string>): Promise<
     }
 
     if ('announcement_text' in settings || 'is_maintenance_mode' in settings) {
-        revalidateTag('settings');
+        revalidateTag('settings', 'default');
     }
 
     return true;
