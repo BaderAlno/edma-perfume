@@ -21,11 +21,11 @@ function getCursorText(el: HTMLElement | null): string {
 }
 
 export default function CustomCursor() {
-    const [visible,     setVisible]     = useState(false);
-    const [hovered,     setHovered]     = useState(false);
-    const [clicked,     setClicked]     = useState(false);
-    const [cursorText,  setCursorText]  = useState("");
-    const [showCursor,  setShowCursor]  = useState(false);
+    const [visible, setVisible] = useState(false);
+    const [hovered, setHovered] = useState(false);
+    const [clicked, setClicked] = useState(false);
+    const [cursorText, setCursorText] = useState("");
+    const [showCursor, setShowCursor] = useState(false);
     const hasFine = useRef(false);
 
     // Raw mouse position (no lag — for the inner precision dot)
@@ -55,29 +55,29 @@ export default function CustomCursor() {
         }
 
         function onDown() { setClicked(true); }
-        function onUp()   { setClicked(false); }
+        function onUp() { setClicked(false); }
         function onLeave() { setVisible(false); setHovered(false); setCursorText(""); }
 
-        window.addEventListener("mousemove",  onMove,  { passive: true });
-        window.addEventListener("mouseover",  onOver,  { passive: true });
-        window.addEventListener("mousedown",  onDown,  { passive: true });
-        window.addEventListener("mouseup",    onUp,    { passive: true });
+        window.addEventListener("mousemove", onMove, { passive: true });
+        window.addEventListener("mouseover", onOver, { passive: true });
+        window.addEventListener("mousedown", onDown, { passive: true });
+        window.addEventListener("mouseup", onUp, { passive: true });
         document.documentElement.addEventListener("mouseleave", onLeave);
 
         return () => {
-            window.removeEventListener("mousemove",  onMove);
-            window.removeEventListener("mouseover",  onOver);
-            window.removeEventListener("mousedown",  onDown);
-            window.removeEventListener("mouseup",    onUp);
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseover", onOver);
+            window.removeEventListener("mousedown", onDown);
+            window.removeEventListener("mouseup", onUp);
             document.documentElement.removeEventListener("mouseleave", onLeave);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // SSR-safe: showCursor is false until useEffect confirms pointer: fine
     if (!showCursor) return null;
 
-    const hasText  = cursorText.length > 0;
+    const hasText = cursorText.length > 0;
     const ringSize = hasText ? 72 : hovered ? 44 : 20;
 
     return (
@@ -87,14 +87,14 @@ export default function CustomCursor() {
                 aria-hidden="true"
                 className="fixed top-0 left-0 pointer-events-none z-[9998] rounded-full flex items-center justify-center overflow-hidden select-none"
                 style={{
-                    x:          ringX,
-                    y:          ringY,
+                    x: ringX,
+                    y: ringY,
                     translateX: "-50%",
                     translateY: "-50%",
-                    opacity:    visible ? 1 : 0,
+                    opacity: visible ? 1 : 0,
                 }}
                 animate={{
-                    width:  ringSize,
+                    width: ringSize,
                     height: ringSize,
                     backgroundColor: hasText
                         ? "rgba(201,168,76,0.93)"
@@ -107,17 +107,17 @@ export default function CustomCursor() {
                     boxShadow: hovered
                         ? "0 0 20px rgba(201,168,76,0.18), inset 0 0 12px rgba(201,168,76,0.06)"
                         : "none",
-                    color: hasText ? "#0D0A07" : "transparent",
+                    color: hasText ? "#0D0A07" : "rgba(0,0,0,0)",
                     scale: clicked ? 0.80 : 1,
                 }}
                 transition={{
-                    width:           { type: "spring", stiffness: 260, damping: 22 },
-                    height:          { type: "spring", stiffness: 260, damping: 22 },
+                    width: { type: "spring", stiffness: 260, damping: 22 },
+                    height: { type: "spring", stiffness: 260, damping: 22 },
                     backgroundColor: { duration: 0.18 },
-                    border:          { duration: 0.18 },
-                    boxShadow:       { duration: 0.22 },
-                    scale:           { type: "spring", stiffness: 420, damping: 26 },
-                    opacity:         { duration: 0.15 },
+                    border: { duration: 0.18 },
+                    boxShadow: { duration: 0.22 },
+                    scale: { type: "spring", stiffness: 420, damping: 26 },
+                    opacity: { duration: 0.15 },
                 }}
             >
                 {hasText && (
@@ -139,15 +139,15 @@ export default function CustomCursor() {
                 aria-hidden="true"
                 className="fixed top-0 left-0 pointer-events-none z-[9999] rounded-full"
                 style={{
-                    x:          rawX,
-                    y:          rawY,
+                    x: rawX,
+                    y: rawY,
                     translateX: "-50%",
                     translateY: "-50%",
                 }}
                 animate={{
-                    width:           hasText ? 0  : 4,
-                    height:          hasText ? 0  : 4,
-                    opacity:         visible && !hasText ? 1 : 0,
+                    width: hasText ? 0 : 4,
+                    height: hasText ? 0 : 4,
+                    opacity: visible && !hasText ? 1 : 0,
                     backgroundColor: hovered
                         ? "rgba(201,168,76,1)"
                         : "rgba(201,168,76,0.75)",
@@ -155,7 +155,7 @@ export default function CustomCursor() {
                 }}
                 transition={{
                     opacity: { duration: 0.12 },
-                    scale:   { type: "spring", stiffness: 500, damping: 30 },
+                    scale: { type: "spring", stiffness: 500, damping: 30 },
                 }}
             />
         </>

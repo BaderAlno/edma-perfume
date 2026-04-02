@@ -7,18 +7,29 @@ import React, {
     useEffect,
     useReducer,
 } from "react";
-import { translations } from "@/i18n/translations";
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Product = (typeof translations.productData)[0];
+/**
+ * Minimal shape required to add an item to the cart.
+ * Accepts both the static translations products (priceValue) and
+ * Supabase ProductForShop records (price_sar).
+ */
+export interface AddableProduct {
+    id: string;
+    name: { en: string; ar: string };
+    /** Numeric SAR price — Supabase products */
+    price_sar?: number;
+    /** Numeric SAR price — translations/legacy products */
+    priceValue?: number;
+    image: string;
+    accent: string;
+}
 
 export interface CartItem {
     id: string;
     name: { en: string; ar: string };
-    price: { en: string; ar: string };
-    /** Parsed SAR integer used for total calculations */
-    priceValue: number;
+    /** SAR price per unit */
+    price_sar: number;
     image: string;
     accent: string;
     quantity: number;
@@ -30,12 +41,12 @@ interface CartState {
 }
 
 type CartAction =
-    | { type: "ADD";        product: Product }
-    | { type: "REMOVE";     id: string }
+    | { type: "ADD"; product: AddableProduct }
+    | { type: "REMOVE"; id: string }
     | { type: "UPDATE_QTY"; id: string; delta: number }
     | { type: "CLEAR" }
-    | { type: "SET_OPEN";   open: boolean }
-    | { type: "HYDRATE";    items: CartItem[] };
+    | { type: "SET_OPEN"; open: boolean }
+    | { type: "HYDRATE"; items: CartItem[] };
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
@@ -53,20 +64,18 @@ function cartReducer(state: CartState, action: CartAction): CartState {
                     ),
                 };
             }
-            const match = action.product.price.en.match(/\d+/);
-            const priceValue = match ? parseInt(match[0]) : 0;
+            const price_sar = action.product.price_sar ?? action.product.priceValue ?? 0;
             return {
                 ...state,
                 items: [
                     ...state.items,
                     {
-                        id:         action.product.id,
-                        name:       action.product.name,
-                        price:      action.product.price,
-                        priceValue,
-                        image:      action.product.image,
-                        accent:     action.product.accent,
-                        quantity:   1,
+                        id: action.product.id,
+                        name: action.product.name,
+                        price_sar,
+                        image: action.product.image,
+                        accent: action.product.accent,
+                        quantity: 1,
                     },
                 ],
             };
@@ -99,16 +108,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 interface CartContextType {
-    items:       CartItem[];
-    isOpen:      boolean;
-    addItem:     (product: Product) => void;
-    removeItem:  (id: string) => void;
-    updateQty:   (id: string, delta: number) => void;
-    clearCart:   () => void;
-    openCart:    () => void;
-    closeCart:   () => void;
-    totalItems:  number;
-    totalPrice:  number;
+    items: CartItem[];
+    isOpen: boolean;
+    addItem: (product: AddableProduct) => void;
+    removeItem: (id: string) => void;
+    updateQty: (id: string, delta: number) => void;
+    clearCart: () => void;
+    openCart: () => void;
+    closeCart: () => void;
+    totalItems: number;
+    totalPrice: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -124,8 +133,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
-                const items = JSON.parse(raw) as CartItem[];
-                dispatch({ type: "HYDRATE", items });
+                const parsedItems = JSON.parse(raw) as CartItem[];
+                // Auto-sanitize: Only keep items with valid UUID format AND valid price
+                const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+                const isMockUUID = (str: string) => str === '11111111-1111-1111-1111-000000000001' || str === '11111111-1111-1111-1111-000000000002' || str.includes('11111111-');
+
+                const sanitizedItems = parsedItems.filter(item => {
+                    const valid = item.id && isUUID(item.id) && !isMockUUID(item.id) && typeof item.price_sar === 'number' && !isNaN(item.price_sar);
+                    if (!valid) console.warn(`[CART SANITIZE] Removing invalid/legacy/mock item:`, item);
+                    return valid;
+                });
+
+                dispatch({ type: "HYDRATE", items: sanitizedItems });
+
+                // If we had to sanitize, rewrite storage immediately
+                if (sanitizedItems.length !== parsedItems.length) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizedItems));
+                }
             }
         } catch {
             // ignore parse errors — start with empty cart
@@ -141,15 +165,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
     }, [state.items]);
 
-    const addItem    = useCallback((p: Product) => dispatch({ type: "ADD",        product: p }), []);
-    const removeItem = useCallback((id: string) => dispatch({ type: "REMOVE",     id }),          []);
-    const updateQty  = useCallback((id: string, delta: number) => dispatch({ type: "UPDATE_QTY", id, delta }), []);
-    const clearCart  = useCallback(() =>          dispatch({ type: "CLEAR" }),                    []);
-    const openCart   = useCallback(() =>          dispatch({ type: "SET_OPEN", open: true  }),    []);
-    const closeCart  = useCallback(() =>          dispatch({ type: "SET_OPEN", open: false }),    []);
+    const addItem = useCallback((p: AddableProduct) => dispatch({ type: "ADD", product: p }), []);
+    const removeItem = useCallback((id: string) => dispatch({ type: "REMOVE", id }), []);
+    const updateQty = useCallback((id: string, delta: number) => dispatch({ type: "UPDATE_QTY", id, delta }), []);
+    const clearCart = useCallback(() => dispatch({ type: "CLEAR" }), []);
+    const openCart = useCallback(() => dispatch({ type: "SET_OPEN", open: true }), []);
+    const closeCart = useCallback(() => dispatch({ type: "SET_OPEN", open: false }), []);
 
     const totalItems = state.items.reduce((s, i) => s + i.quantity, 0);
-    const totalPrice = state.items.reduce((s, i) => s + i.priceValue * i.quantity, 0);
+    const totalPrice = state.items.reduce((s, i) => s + i.price_sar * i.quantity, 0);
 
     return (
         <CartContext.Provider value={{

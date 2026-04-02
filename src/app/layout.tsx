@@ -5,10 +5,12 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { CartProvider } from "@/context/CartContext";
 import { CurrencyProvider } from "@/context/CurrencyContext";
 import { AuthProvider } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
 import CartDrawer from "@/components/CartDrawer";
 import CustomCursor from "@/components/CustomCursor";
 import PageTransition from "@/components/PageTransition";
 import CinematicIntro from "@/components/CinematicIntro";
+import StickyCartBar from "@/components/StickyCartBar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -39,149 +41,149 @@ export const metadata: Metadata = {
   ],
   // Set NEXT_PUBLIC_SITE_URL in .env.local to your production domain
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://edmaperfume.com"),
-  authors:   [{ name: "EDMA Perfume" }],
-  creator:   "EDMA Perfume",
+  authors: [{ name: "EDMA Perfume" }],
+  creator: "EDMA Perfume",
   publisher: "EDMA Perfume",
-  category:  "luxury fragrance",
+  category: "luxury fragrance",
 
   // Prevent indexing until live — remove for production
   robots: {
-    index:  true,
+    index: true,
     follow: true,
     googleBot: {
-      index:              true,
-      follow:             true,
+      index: true,
+      follow: true,
       "max-image-preview": "large",
-      "max-snippet":       -1,
+      "max-snippet": -1,
       "max-video-preview": -1,
     },
   },
 
   openGraph: {
-    type:            "website",
-    locale:          "ar_SA",
+    type: "website",
+    locale: "ar_SA",
     alternateLocale: ["en_US"],
-    title:           "EDMA Perfume | إدما العطور — أناقة خفية",
+    title: "EDMA Perfume | إدما العطور — أناقة خفية",
     description:
       "Luxury Arabian fragrances handcrafted with rare oud, rose, and amber. Invisible elegance, unforgettable presence. عطور عربية فاخرة.",
     siteName: "EDMA Perfume",
     images: [
       {
-        url:    "/Edma-Perf/og-image.jpg",
-        width:  1200,
+        url: "/Edma-Perf/og-image.jpg",
+        width: 1200,
         height: 630,
-        alt:    "EDMA Perfume — Invisible Elegance, Unforgettable Presence",
-        type:   "image/jpeg",
+        alt: "EDMA Perfume — Invisible Elegance, Unforgettable Presence",
+        type: "image/jpeg",
       },
     ],
   },
 
   twitter: {
-    card:        "summary_large_image",
-    title:       "EDMA Perfume | إدما العطور",
+    card: "summary_large_image",
+    title: "EDMA Perfume | إدما العطور",
     description: "Luxury Arabian fragrances. Rare oud, rose, and amber. Free delivery in Saudi Arabia.",
-    images:      ["/Edma-Perf/og-image.jpg"],
-    creator:     "@EdmaPerfume",
+    images: ["/Edma-Perf/og-image.jpg"],
+    creator: "@EdmaPerfume",
   },
 
   icons: {
-    icon:     "/Edma-Perf/favicon.ico",
+    icon: "/Edma-Perf/favicon.ico",
     shortcut: "/Edma-Perf/favicon.ico",
-    apple:    "/Edma-Perf/apple-touch-icon.png",
+    apple: "/Edma-Perf/apple-touch-icon.png",
   },
 
   // Structured data hints
   other: {
-    "og:price:amount":   "320",
+    "og:price:amount": "320",
     "og:price:currency": "SAR",
-    "product:brand":     "EDMA",
+    "product:brand": "EDMA",
     "product:condition": "new",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor:        "#0A0806",
-  colorScheme:       "dark",
-  width:             "device-width",
-  initialScale:      1,
-  maximumScale:      5,
+  themeColor: "#0A0806",
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 // ── JSON-LD structured data ───────────────────────────────────────────────────
 const jsonLd = {
-  "@context":   "https://schema.org",
+  "@context": "https://schema.org",
   "@graph": [
     {
-      "@type":       "Organization",
-      "@id":         "https://edmaperfume.com/#organization",
-      name:          "EDMA Perfume",
-      description:   "Luxury Arabian fragrance house crafting invisible elegance with rare oud, rose, and amber.",
-      url:           "https://edmaperfume.com",
+      "@type": "Organization",
+      "@id": "https://edmaperfume.com/#organization",
+      name: "EDMA Perfume",
+      description: "Luxury Arabian fragrance house crafting invisible elegance with rare oud, rose, and amber.",
+      url: "https://edmaperfume.com",
       logo: {
         "@type": "ImageObject",
-        url:     "https://edmaperfume.com/Edma-Perf/og-image.jpg",
+        url: "https://edmaperfume.com/Edma-Perf/og-image.jpg",
       },
       sameAs: [],
     },
     {
-      "@type":       "WebSite",
-      "@id":         "https://edmaperfume.com/#website",
-      url:           "https://edmaperfume.com",
-      name:          "EDMA Perfume",
-      description:   "Luxury Arabian Fragrances",
-      publisher:     { "@id": "https://edmaperfume.com/#organization" },
-      inLanguage:    ["ar", "en"],
+      "@type": "WebSite",
+      "@id": "https://edmaperfume.com/#website",
+      url: "https://edmaperfume.com",
+      name: "EDMA Perfume",
+      description: "Luxury Arabian Fragrances",
+      publisher: { "@id": "https://edmaperfume.com/#organization" },
+      inLanguage: ["ar", "en"],
     },
     {
-      "@type":       "ItemList",
-      "@id":         "https://edmaperfume.com/#products",
-      name:          "EDMA Fragrance Collection",
+      "@type": "ItemList",
+      "@id": "https://edmaperfume.com/#products",
+      name: "EDMA Fragrance Collection",
       itemListElement: [
         {
-          "@type":    "ListItem",
-          position:   1,
+          "@type": "ListItem",
+          position: 1,
           item: {
-            "@type":      "Product",
-            name:         "Elinor by EDMA",
-            description:  "A rare oud opening crowned by rose absolute and warm amber base.",
-            brand:        { "@type": "Brand", name: "EDMA" },
+            "@type": "Product",
+            name: "Elinor by EDMA",
+            description: "A rare oud opening crowned by rose absolute and warm amber base.",
+            brand: { "@type": "Brand", name: "EDMA" },
             offers: {
-              "@type":        "Offer",
-              price:          "450",
-              priceCurrency:  "SAR",
-              availability:   "https://schema.org/InStock",
+              "@type": "Offer",
+              price: "450",
+              priceCurrency: "SAR",
+              availability: "https://schema.org/InStock",
             },
           },
         },
         {
-          "@type":    "ListItem",
-          position:   2,
+          "@type": "ListItem",
+          position: 2,
           item: {
-            "@type":       "Product",
-            name:          "VELOUR by EDMA",
-            description:   "A luxurious blend of leather, cocoa, saffron, rose, and musk.",
-            brand:         { "@type": "Brand", name: "EDMA" },
+            "@type": "Product",
+            name: "VELOUR by EDMA",
+            description: "A luxurious blend of leather, cocoa, saffron, rose, and musk.",
+            brand: { "@type": "Brand", name: "EDMA" },
             offers: {
-              "@type":        "Offer",
-              price:          "380",
-              priceCurrency:  "SAR",
-              availability:   "https://schema.org/InStock",
+              "@type": "Offer",
+              price: "380",
+              priceCurrency: "SAR",
+              availability: "https://schema.org/InStock",
             },
           },
         },
         {
-          "@type":    "ListItem",
-          position:   3,
+          "@type": "ListItem",
+          position: 3,
           item: {
-            "@type":       "Product",
-            name:          "CECILY by EDMA",
-            description:   "A rare floral signature — jasmine and Bulgarian rose entwined with sandalwood and white musk.",
-            brand:         { "@type": "Brand", name: "EDMA" },
+            "@type": "Product",
+            name: "CECILY by EDMA",
+            description: "A rare floral signature — jasmine and Bulgarian rose entwined with sandalwood and white musk.",
+            brand: { "@type": "Brand", name: "EDMA" },
             offers: {
-              "@type":        "Offer",
-              price:          "320",
-              priceCurrency:  "SAR",
-              availability:   "https://schema.org/InStock",
+              "@type": "Offer",
+              price: "320",
+              priceCurrency: "SAR",
+              availability: "https://schema.org/InStock",
             },
           },
         },
@@ -225,19 +227,20 @@ export default function RootLayout({
 
         <LanguageProvider>
           <AuthProvider>
-          <CurrencyProvider>
-          <CartProvider>
-            {/* Cinematic intro — shown once per session, z-[300] above all else */}
-            <CinematicIntro />
-            <CartDrawer />
-            <CustomCursor />
-            <PageTransition>
-              <div id="main-content" tabIndex={-1}>
-                {children}
-              </div>
-            </PageTransition>
-          </CartProvider>
-          </CurrencyProvider>
+            <CurrencyProvider>
+              <CartProvider>
+                <CinematicIntro />
+                <Navbar />
+                <CartDrawer />
+                <CustomCursor />
+                <PageTransition>
+                  <div id="main-content" tabIndex={-1}>
+                    {children}
+                  </div>
+                </PageTransition>
+                <StickyCartBar />
+              </CartProvider>
+            </CurrencyProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

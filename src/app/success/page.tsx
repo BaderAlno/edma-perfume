@@ -59,12 +59,12 @@ type Status = "verifying" | "sending_email" | "done" | "failed";
 // ─── Inner component (uses useSearchParams, must be in Suspense) ──────────────
 function SuccessContent() {
     const searchParams = useSearchParams();
-    const router       = useRouter();
+    const router = useRouter();
     const { language } = useLanguage();
     const { items, clearCart } = useCart();
     const isAr = language === "ar";
 
-    const [status,   setStatus]   = useState<Status>("verifying");
+    const [status, setStatus] = useState<Status>("verifying");
     const [orderRef, setOrderRef] = useState<string | null>(null);
     const processedRef = useRef(false);
 
@@ -119,14 +119,17 @@ function SuccessContent() {
         clearCart();
 
         // Retrieve checkout data from sessionStorage
-        let email    = "";
+        let email = "";
         let ssItems: { id: string; quantity: number }[] = [];
         let ssLang: "en" | "ar" = language;
+        let couponData: { couponId: string; discountAmount: number } | undefined = undefined;
         try {
-            email   = sessionStorage.getItem("edma-checkout-email")    ?? "";
-            ssItems = JSON.parse(sessionStorage.getItem("edma-checkout-items")    ?? "[]");
+            email = sessionStorage.getItem("edma-checkout-email") ?? "";
+            ssItems = JSON.parse(sessionStorage.getItem("edma-checkout-items") ?? "[]");
             const sl = sessionStorage.getItem("edma-checkout-language");
             if (sl === "en" || sl === "ar") ssLang = sl;
+            const sc = sessionStorage.getItem("edma-checkout-coupon");
+            if (sc) couponData = JSON.parse(sc);
         } catch { /* ignore */ }
 
         // If no session data, fall back to cart items (already cleared, so use the snapshot)
@@ -139,19 +142,22 @@ function SuccessContent() {
             try {
                 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/Edma-Perf";
                 await fetch(`${basePath}/api/send-email`, {
-                    method:  "POST",
+                    method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         email,
-                        items:    orderItems,
+                        items: orderItems,
                         language: ssLang,
                         orderRef: piId,
+                        couponId: couponData?.couponId,
+                        discountAmount: couponData?.discountAmount,
                     }),
                 });
                 // Clean up sessionStorage
                 sessionStorage.removeItem("edma-checkout-email");
                 sessionStorage.removeItem("edma-checkout-items");
                 sessionStorage.removeItem("edma-checkout-language");
+                sessionStorage.removeItem("edma-checkout-coupon");
             } catch { /* email failed silently — order is still confirmed */ }
         }
 

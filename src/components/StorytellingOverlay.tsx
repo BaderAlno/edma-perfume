@@ -87,10 +87,12 @@ export default function StorytellingOverlay() {
                 style={{ opacity: topNotesOpacity, y: topNotesY }}
                 className="sticky top-0 h-screen flex flex-col justify-center items-start px-8 md:px-24 lg:px-40"
             >
-                <div className="max-w-md pointer-events-auto">
-                    <h2 className="font-serif text-4xl md:text-5xl text-white/90 mb-6 text-glow">The First Impression.</h2>
+                <div className="max-w-md pointer-events-auto" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                    <h2 className={language === 'ar' ? "font-arabic text-4xl md:text-5xl text-white/90 mb-6 text-glow" : "font-serif text-4xl md:text-5xl text-white/90 mb-6 text-glow"}>
+                        {t.firstImpression[language]}
+                    </h2>
                     <p className="text-[#EBE5D9]/70 font-light leading-relaxed text-lg">
-                        A luminous burst of dewy black currant and fresh pear awakens the senses, setting the stage for an unforgettable journey.
+                        {t.firstImpressionDesc[language]}
                     </p>
                 </div>
             </motion.div>
@@ -98,12 +100,14 @@ export default function StorytellingOverlay() {
             {/* 3. The Floral Heart */}
             <motion.div
                 style={{ opacity: heartOpacity, y: heartY }}
-                className="sticky top-0 h-screen flex flex-col justify-center items-end px-8 md:px-24 lg:px-40 text-right"
+                className={language === 'ar' ? "sticky top-0 h-screen flex flex-col justify-center items-start px-8 md:px-24 lg:px-40 text-right" : "sticky top-0 h-screen flex flex-col justify-center items-end px-8 md:px-24 lg:px-40 text-right"}
             >
-                <div className="max-w-md pointer-events-auto">
-                    <h2 className="font-serif text-4xl md:text-5xl text-white/90 mb-6 text-glow">The Floral Heart.</h2>
+                <div className="max-w-md pointer-events-auto" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                    <h2 className={language === 'ar' ? "font-arabic text-4xl md:text-5xl text-white/90 mb-6 text-glow" : "font-serif text-4xl md:text-5xl text-white/90 mb-6 text-glow"}>
+                        {t.floralHeart[language]}
+                    </h2>
                     <p className="text-[#EBE5D9]/70 font-light leading-relaxed text-lg">
-                        A captivating and elegant core. Rare iris, jasmine, and orange blossom blend to create a pulse of pure, vibrant beauty.
+                        {t.floralHeartDesc[language]}
                     </p>
                 </div>
             </motion.div>

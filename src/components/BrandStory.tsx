@@ -146,7 +146,7 @@ export default function BrandStory() {
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-px bg-[#D4AF37]/50" />
                                 <span className="text-[#D4AF37]/60 text-xs tracking-wider">
-                                    UAE
+                                    KWT
                                 </span>
                             </div>
                         </div>

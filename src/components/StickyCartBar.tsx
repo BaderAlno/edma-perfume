@@ -6,12 +6,14 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { translations } from "@/i18n/translations";
+import { usePathname } from "next/navigation";
 
 export default function StickyCartBar() {
     const [isVisible, setIsVisible] = useState(false);
     const [added, setAdded] = useState(false);
     const { language } = useLanguage();
     const { addItem, openCart } = useCart();
+    const pathname = usePathname();
     const { formatPrice } = useCurrency();
     const t = translations.stickyCart;
     // Elinor is the flagship product (index 0)
@@ -26,6 +28,10 @@ export default function StickyCartBar() {
 
     useEffect(() => {
         const handleScroll = () => {
+            if (pathname?.startsWith('/admin') || pathname?.startsWith('/checkout') || pathname?.startsWith('/success')) {
+                setIsVisible(false);
+                return;
+            }
             // Show bar after scrolling past 100vh (the initial Hero viewport)
             if (window.scrollY > window.innerHeight * 0.8) {
                 setIsVisible(true);
@@ -37,7 +43,11 @@ export default function StickyCartBar() {
         window.addEventListener("scroll", handleScroll, { passive: true });
         handleScroll(); // Check initial state
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [pathname]);
+
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/checkout') || pathname?.startsWith('/success')) {
+        return null;
+    }
 
     return (
         <AnimatePresence>

@@ -263,7 +263,7 @@ export default function HeroSection() {
                             transform: "scale(1.08)",
                             display: "block",
                             mixBlendMode: "multiply",
-                            imageRendering: "high-quality",
+                            imageRendering: "auto",
                         }}
                     />
                 </div>

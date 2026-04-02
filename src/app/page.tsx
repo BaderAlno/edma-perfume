@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+
 import ScrollytellingCanvas from "@/components/ScrollytellingCanvas";
 import StorytellingOverlay from "@/components/StorytellingOverlay";
 import HeroSection from "@/components/HeroSection";
@@ -8,14 +8,11 @@ import ProductSection from "@/components/ProductSection";
 import BrandStory from "@/components/BrandStory";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import CTASection from "@/components/CTASection";
-import StickyCartBar from "@/components/StickyCartBar";
 import CinematicSection from "@/components/CinematicSection";
 
 export default function Home() {
   return (
     <main className="relative bg-[#0A0806] text-[#EBE5D9]">
-      <Navbar />
-
       {/* 
         This wrapper creates the scroll bounds (500vh). 
         The canvas and text overlay are `sticky`, so they 
@@ -36,9 +33,6 @@ export default function Home() {
       <BrandStory />
       <TestimonialsSection />
       <CTASection />
-
-      {/* Global Sticky Cart Bar */}
-      <StickyCartBar />
     </main>
   );
 }

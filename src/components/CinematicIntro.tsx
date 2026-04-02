@@ -50,8 +50,9 @@ export default function CinematicIntro() {
                         className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#C9A84C]/30 to-transparent"
                     />
 
-                    {/* EDMA letters */}
-                    <div className="flex gap-2 sm:gap-6 md:gap-10 mb-6">
+                    {/* EDMA letters — dir="ltr" ensures flex-row is left-to-right
+                        regardless of the page's RTL direction */}
+                    <div className="flex flex-row gap-2 sm:gap-6 md:gap-10 mb-6" dir="ltr">
                         {LETTERS.map((letter, i) => (
                             <motion.span
                                 key={letter}

@@ -6,7 +6,7 @@ export const translations = {
         heart: { en: "The Heart", ar: "قلب العطر" },
         base: { en: "The Base", ar: "قاعدة العطر" },
         shop: { en: "Shop", ar: "المتجر" },
-        discover: { en: "Discover VELOUR", ar: "اكتشف VELOUR" }
+        discover: { en: "Discover EDMA", ar: "اكتشف EDMA" }
     },
     hero: {
         title: { en: "EDMA", ar: "EDMA" },
@@ -26,6 +26,10 @@ export const translations = {
         subQuote: { en: "Crafted for those who leave a lasting impression", ar: "صُنع لمن يترك أثراً لا يُنسى" },
         shopCollection: { en: "Shop Collection", ar: "تسوق المجموعة" },
         exploreDims: { en: "Explore new dimensions of luxury...", ar: "استكشف أبعاداً جديدة للرفاهية..." },
+        firstImpression: { en: "The First Impression.", ar: "الانطباع الأول." },
+        firstImpressionDesc: { en: "A luminous burst of dewy black currant and fresh pear awakens the senses, setting the stage for an unforgettable journey.", ar: "نفحات مضيئة من الكشمش الأسود والكمثرى الطازجة توقظ الحواس، لتبدأ رحلة لا تُنسى." },
+        floralHeart: { en: "The Floral Heart.", ar: "القلب الزهري." },
+        floralHeartDesc: { en: "A captivating and elegant core. Rare iris, jasmine, and orange blossom blend to create a pulse of pure, vibrant beauty.", ar: "جوهر آسر وأنيق. يمتزج السوسن النادر والياسمين وزهر البرتقال لابتكار نبض من الجمال النقي النابض بالحياة." },
         gourmand: { en: "A Gourmand Masterpiece.", ar: "تحفة عطرية فريدة." },
         gourmandDesc: { en: "A sweet escape into a world of elegance. Rich praline, warm vanilla, and deep patchouli leave a trail that lingers long after you're gone.", ar: "ملاذ حلو إلى عالم الأناقة. برالين غني، فانيليا دافئة، وباتشولي عميق يترك أثراً يدوم طويلاً بعد رحيلك." },
         oneFragrance: { en: "One fragrance.", ar: "عطر واحد." },
@@ -50,25 +54,25 @@ export const translations = {
         craft: { en: "We craft perfumes for those seeking excellence.", ar: "نصنع العطور لمن يبحث عن التميز." },
         shopCollection: { en: "Shop Collection", ar: "تسوق المجموعة" },
         passionSince: { en: "Crafted with passion since", ar: "صُنع بشغف منذ" },
-        madeIn: { en: "Made in the UAE", ar: "مصنوع في الإمارات" }
+        madeIn: { en: "Made in KWT.", ar: "مصنوع في الكويت" }
     },
     productsSection: {
         exclusive: { en: "Exclusive Batch — Limited Stock", ar: "إصدار حصري — كمية محدودة" },
-        shopNow:   { en: "Shop Now",     ar: "تسوق الآن" },
-        addToCart: { en: "Add to Cart",  ar: "إضافة للسلة" },
-        added:     { en: "Added ✓",      ar: "تمت الإضافة ✓" },
-        whatsapp:  { en: "Order via WhatsApp", ar: "الطلب عبر واتساب" },
-        orderNow:  { en: "Order Now",    ar: "اطلب الآن" }
+        shopNow: { en: "Shop Now", ar: "تسوق الآن" },
+        addToCart: { en: "Add to Cart", ar: "إضافة للسلة" },
+        added: { en: "Added ✓", ar: "تمت الإضافة ✓" },
+        whatsapp: { en: "Order via WhatsApp", ar: "الطلب عبر واتساب" },
+        orderNow: { en: "Order Now", ar: "اطلب الآن" }
     },
     cart: {
-        title:            { en: "Your Cart",                          ar: "سلتك" },
-        empty:            { en: "Your cart is empty",                 ar: "سلتك فارغة" },
-        emptySubtitle:    { en: "Discover our luxury fragrances",     ar: "اكتشفي عطورنا الفاخرة" },
-        continueShopping: { en: "Continue Shopping",                  ar: "متابعة التسوق" },
-        checkout:         { en: "Checkout",                           ar: "إتمام الشراء" },
-        total:            { en: "Total",                              ar: "المجموع" },
-        remove:           { en: "Remove",                             ar: "إزالة" },
-        freeDelivery:     { en: "Free delivery on all orders",        ar: "توصيل مجاني لجميع الطلبات" },
+        title: { en: "Your Cart", ar: "سلتك" },
+        empty: { en: "Your cart is empty", ar: "سلتك فارغة" },
+        emptySubtitle: { en: "Discover our luxury fragrances", ar: "اكتشفي عطورنا الفاخرة" },
+        continueShopping: { en: "Continue Shopping", ar: "متابعة التسوق" },
+        checkout: { en: "Checkout", ar: "إتمام الشراء" },
+        total: { en: "Total", ar: "المجموع" },
+        remove: { en: "Remove", ar: "إزالة" },
+        freeDelivery: { en: "Free delivery on all orders", ar: "توصيل مجاني لجميع الطلبات" },
     },
     shopPage: {
         shopLabel: { en: "THE SHOP", ar: "المتجر" },
@@ -118,7 +122,6 @@ export const translations = {
     stickyCart: {
         brand: { en: "Edma Perfume", ar: "عطور إدما" },
         addToCart: { en: "Add to Cart", ar: "إضافة للسلة" },
-        price: { en: "450 SAR", ar: "450 ر.س" }
     },
     instagram: {
         followUs: { en: "Follow us on Instagram", ar: "تابعنا على إنستقرام" },
@@ -130,7 +133,6 @@ export const translations = {
             name: { en: "Elinor", ar: "إلينور" },
             nameEn: { en: "Elinor", ar: "Elinor" },
             priceValue: 450,
-            price: { en: "450 SAR", ar: "450 ر.س" },
             desc: { en: "An elegance that touches you, and stays", ar: "رونق يلمسك، وأناقة تبقى" },
             story: { en: "A perfume blending oriental freshness with modern allure. Elinor is not just a scent — it is who you are.", ar: "عطر يجمع بين النضارة الشرقية والجاذبية الحديثة. إلينور ليست مجرد عطر — بل هي من أنتِ." },
             notes: { en: ["Taif Rose", "Cambodian Oud", "White Musk", "Frankincense"], ar: ["ورد طائفي", "عود كمبودي", "مسك أبيض", "لبان ذكر"] },
@@ -143,7 +145,6 @@ export const translations = {
             name: { en: "VELOUR", ar: "فيلور" },
             nameEn: { en: "VELOUR", ar: "VELOUR" },
             priceValue: 380,
-            price: { en: "380 SAR", ar: "380 ر.س" },
             desc: { en: "Depth that resides in the soul", ar: "عمق يسكن الروح" },
             story: { en: "From the finest ateliers, VELOUR emerges with the warmth of leather, the richness of cocoa, and the timeless allure of rose and musk.", ar: "من أرقى دور العطور، يبزغ فيلور بدفء الجلد وغنى الكاكاو وسحر الورد والمسك الأبدي." },
             notes: { en: ["Leather", "Cocoa", "Saffron", "Rose", "Musk"], ar: ["جلد", "كاكاو", "زعفران", "ورد", "مسك"] },
@@ -156,7 +157,6 @@ export const translations = {
             name: { en: "CECILY", ar: "سيسيلي" },
             nameEn: { en: "CECILY", ar: "CECILY" },
             priceValue: 320,
-            price: { en: "320 SAR", ar: "320 ر.س" },
             desc: { en: "A whisper of pure refinement", ar: "همسة من الرقي الخالص" },
             story: { en: "CECILY — A rare floral signature, delicate yet unforgettable. Jasmine and rose entwined with the warmth of sandalwood and white musk.", ar: "سيسيلي — توقيع زهري نادر، رقيق لكنه لا يُنسى. الياسمين والورد يلتفّان بدفء خشب الصندل والمسك الأبيض." },
             notes: { en: ["Jasmine", "Bulgarian Rose", "White Musk", "Cedarwood"], ar: ["ياسمين", "ورد بلغاري", "مسك أبيض", "خشب الأرز"] },

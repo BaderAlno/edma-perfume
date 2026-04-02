@@ -1,623 +1,283 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-    Elements,
-    PaymentElement,
-    useElements,
-    useStripe,
-} from "@stripe/react-stripe-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCurrency } from "@/context/CurrencyContext";
 
-// ─── Stripe singleton (created once outside render) ───────────────────────────
-const stripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
-);
+const PAYMENT_METHODS = [
+    { id: "tap", title: "البطاقة الائتمانية / مدى / KNET", titleEn: "Credit Card / mada / KNET", icon: "💳" },
+    { id: "apple_pay", title: "Apple Pay", titleEn: "Apple Pay", icon: "🍎" },
+    { id: "bank_transfer", title: "تحويل بنكي", titleEn: "Bank Transfer", icon: "🏦" },
+    { id: "cash_on_delivery", title: "الدفع عند الاستلام (COD)", titleEn: "Cash on Delivery (COD)", icon: "💵" }
+];
 
-// True when the publishable key is a Stripe test key (pk_test_...)
-const IS_STRIPE_TEST = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "").startsWith("pk_test_");
-
-// ─── Stripe Element appearance: luxury dark theme ─────────────────────────────
-const STRIPE_APPEARANCE = {
-    theme: "night" as const,
-    variables: {
-        colorPrimary:        "#C9A84C",
-        colorBackground:     "#1A0E08",
-        colorText:           "#EBE5D9",
-        colorTextSecondary:  "#8B7355",
-        colorTextPlaceholder:"#5C4033",
-        colorDanger:         "#e57373",
-        colorSuccess:        "#4caf50",
-        fontFamily:          "Inter, Arial, sans-serif",
-        fontSizeBase:        "14px",
-        borderRadius:        "8px",
-        spacingGridRow:      "20px",
-    },
-    rules: {
-        ".Input": {
-            border:          "1px solid rgba(201, 168, 76, 0.2)",
-            boxShadow:       "none",
-            backgroundColor: "#0D0A07",
-            transition:      "border-color 0.2s ease",
-        },
-        ".Input:focus": {
-            border:    "1px solid rgba(201, 168, 76, 0.6)",
-            boxShadow: "0 0 0 3px rgba(201, 168, 76, 0.08)",
-        },
-        ".Label": {
-            color:         "#8B7355",
-            fontSize:      "11px",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            fontWeight:    "400",
-        },
-        ".Tab": {
-            border:          "1px solid rgba(201, 168, 76, 0.15)",
-            backgroundColor: "#0D0A07",
-        },
-        ".Tab--selected": {
-            border:     "1px solid rgba(201, 168, 76, 0.5)",
-            boxShadow:  "0 0 0 3px rgba(201, 168, 76, 0.08)",
-        },
-        ".Error": { color: "#e57373" },
-    },
-};
-
-// ─── Spinner ──────────────────────────────────────────────────────────────────
-function GoldSpinner({ size = 20 }: { size?: number }) {
-    return (
-        <svg
-            width={size} height={size} viewBox="0 0 24 24"
-            className="animate-spin"
-            style={{ animationDuration: "0.8s" }}
-        >
-            <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(201,168,76,0.2)" strokeWidth="2.5" />
-            <path
-                d="M12 2 a10 10 0 0 1 10 10"
-                fill="none" stroke="#C9A84C" strokeWidth="2.5"
-                strokeLinecap="round"
-            />
-        </svg>
-    );
-}
-
-// ─── Mock bypass form (used when Stripe API key is invalid/placeholder) ───────
-function MockBypassForm({
-    email, setEmail, language,
-}: {
-    email:    string;
-    setEmail: (v: string) => void;
-    language: "en" | "ar";
-}) {
+export default function CheckoutPage() {
     const router = useRouter();
-    const { items } = useCart();
-    const isAr = language === "ar";
-    const [isProcessing, setIsProcessing] = useState(false);
-
-    const handleSimulate = async () => {
-        if (!email) return;
-        setIsProcessing(true);
-        try {
-            sessionStorage.setItem("edma-checkout-email",    email);
-            sessionStorage.setItem("edma-checkout-items",    JSON.stringify(
-                items.map(i => ({ id: i.id, quantity: i.quantity }))
-            ));
-            sessionStorage.setItem("edma-checkout-language", language);
-        } catch { /* ignore */ }
-
-        const mockPiId = `pi_mock_${Date.now()}`;
-        const params = new URLSearchParams({
-            payment_intent:               mockPiId,
-            payment_intent_client_secret: `${mockPiId}_secret_test_bypass`,
-            redirect_status:              "succeeded",
-        });
-        router.push(`/success?${params.toString()}`);
-    };
-
-    return (
-        <form onSubmit={(e) => { e.preventDefault(); handleSimulate(); }} className="flex flex-col gap-6">
-            {/* Mock mode banner */}
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                <svg className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v4m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
-                </svg>
-                <div className="flex flex-col gap-0.5">
-                    <p className="font-sans text-[10px] uppercase tracking-wider text-amber-400 font-semibold">
-                        Test Mode — Mock Payment
-                    </p>
-                    <p className="font-sans text-xs text-amber-300/70 leading-relaxed">
-                        Stripe keys are placeholder values. Enter your email and simulate a successful payment to test the full flow.
-                    </p>
-                </div>
-            </div>
-
-            {/* Section label */}
-            <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-gradient-to-r from-[#C9A84C]/40 to-transparent" />
-                <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-[0.3em]"} text-[#C9A84C]/70`}>
-                    {isAr ? "تفاصيل الدفع" : "Payment Details"}
-                </span>
-                <div className="h-px flex-1 bg-gradient-to-l from-[#C9A84C]/40 to-transparent" />
-            </div>
-
-            {/* Email input */}
-            <div className="flex flex-col gap-2">
-                <label
-                    htmlFor="mock-email"
-                    className={`${isAr ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-[0.2em]"} text-[#8B7355]`}
-                >
-                    {isAr ? "البريد الإلكتروني" : "Email Address"}
-                </label>
-                <input
-                    id="mock-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    dir="ltr"
-                    placeholder={isAr ? "بريدك@مثال.com" : "your@email.com"}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0D0A07] border border-[#C9A84C]/20 text-[#EBE5D9] text-sm placeholder:text-[#5C4033] focus:outline-none focus:border-[#C9A84C]/60 focus:ring-1 focus:ring-[#C9A84C]/20 transition-colors duration-200"
-                />
-            </div>
-
-            {/* Simulate button */}
-            <button
-                type="submit"
-                disabled={!email || isProcessing}
-                className="relative w-full py-4 rounded-full overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-                <span className="absolute inset-0 bg-gradient-to-r from-[#C9A84C] via-[#E5C84A] to-[#C9A84C]" />
-                <span className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                <span className="relative flex items-center justify-center gap-3">
-                    {isProcessing && <GoldSpinner size={18} />}
-                    <span className={`${isAr ? "font-arabic text-base" : "font-sans text-xs uppercase tracking-[0.15em]"} text-[#0D0A07] font-semibold`}>
-                        {isAr ? "محاكاة دفع ناجح" : "Simulate Successful Payment"}
-                    </span>
-                </span>
-            </button>
-        </form>
-    );
-}
-
-// ─── Order Summary sidebar ────────────────────────────────────────────────────
-function OrderSummary({ language }: { language: "en" | "ar" }) {
-    const { items, totalPrice } = useCart();
+    const { items, totalPrice, clearCart } = useCart();
+    const { language } = useLanguage();
     const { formatPrice } = useCurrency();
     const isAr = language === "ar";
 
-    return (
-        <div className="flex flex-col gap-6">
-            {/* Title */}
-            <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-gradient-to-r from-[#C9A84C]/40 to-transparent" />
-                <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-[0.3em]"} text-[#C9A84C]/70`}>
-                    {isAr ? "ملخص الطلب" : "Order Summary"}
-                </span>
-                <div className="h-px flex-1 bg-gradient-to-l from-[#C9A84C]/40 to-transparent" />
-            </div>
-
-            {/* Items */}
-            <ul className="flex flex-col gap-4">
-                {items.map((item) => (
-                    <li key={item.id} className="flex items-center gap-4">
-                        {/* Thumbnail */}
-                        <div
-                            className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"
-                            style={{ background: `${item.accent}18` }}
-                        >
-                            <Image
-                                src={item.image}
-                                alt={item.name[language]}
-                                fill
-                                sizes="56px"
-                                className="object-contain p-1.5"
-                            />
-                        </div>
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                            <p className={`${isAr ? "font-arabic text-base" : "font-serif text-base"} text-[#EBE5D9] font-light truncate`}>
-                                {item.name[language]}
-                            </p>
-                            <p className={`${isAr ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-wider"} text-[#8B7355]`}>
-                                {isAr ? `الكمية: ${item.quantity}` : `Qty: ${item.quantity}`}
-                            </p>
-                        </div>
-                        {/* Line total */}
-                        <p className={`${isAr ? "font-arabic text-sm" : "font-sans text-sm"} text-[#C9A84C] flex-shrink-0 tabular-nums`}>
-                            {formatPrice(item.priceValue * item.quantity)}
-                        </p>
-                    </li>
-                ))}
-            </ul>
-
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-[#C9A84C]/20 to-transparent" />
-
-            {/* Totals */}
-            <div className="flex flex-col gap-3">
-                {/* Shipping */}
-                <div className="flex items-center justify-between">
-                    <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-xs uppercase tracking-wider"} text-[#8B7355]`}>
-                        {isAr ? "التوصيل" : "Delivery"}
-                    </span>
-                    <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-xs uppercase tracking-wider"} text-[#C9A84C]`}>
-                        {isAr ? "مجاني" : "Free"}
-                    </span>
-                </div>
-                {/* Total */}
-                <div className="flex items-center justify-between pt-2 border-t border-[#C9A84C]/15">
-                    <span className={`${isAr ? "font-arabic text-base" : "font-sans text-xs uppercase tracking-widest"} text-[#EBE5D9]/70`}>
-                        {isAr ? "المجموع" : "Total"}
-                    </span>
-                    <span className={`${isAr ? "font-arabic text-2xl" : "font-serif text-2xl"} text-[#C9A84C] font-light tabular-nums`}>
-                        {formatPrice(totalPrice)}
-                    </span>
-                </div>
-            </div>
-
-            {/* Trust badges */}
-            <div className="grid grid-cols-2 gap-2 pt-2">
-                {[
-                    { icon: "🔒", en: "Secure Payment",       ar: "دفع آمن" },
-                    { icon: "📦", en: "Luxury Packaging",     ar: "تغليف فاخر" },
-                    { icon: "✓",  en: "100% Authentic",       ar: "أصالة مضمونة" },
-                    { icon: "↩",  en: "Free Returns",         ar: "إرجاع مجاني" },
-                ].map(b => (
-                    <div key={b.en} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1A0E08] border border-[#C9A84C]/10">
-                        <span className="text-xs">{b.icon}</span>
-                        <span className={`${isAr ? "font-arabic text-xs" : "font-sans text-[9px] uppercase tracking-wide"} text-[#8B7355]`}>
-                            {isAr ? b.ar : b.en}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// ─── Payment form (must be inside <Elements>) ─────────────────────────────────
-function PaymentForm({
-    email, setEmail, totalPrice, language,
-}: {
-    email:      string;
-    setEmail:   (v: string) => void;
-    totalPrice: number;
-    language:   "en" | "ar";
-}) {
-    const stripe    = useStripe();
-    const elements  = useElements();
-    const { items, clearCart } = useCart();
-    const { formatPrice } = useCurrency();
-    const isAr      = language === "ar";
-
+    const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [method, setMethod] = useState("tap");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [errorMsg,     setErrorMsg]     = useState<string | null>(null);
-    const [isReady,      setIsReady]      = useState(false);
+    const [globalError, setGlobalError] = useState<string | null>(null);
+    const [failCount, setFailCount] = useState(0);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Mock coupon logic for visual parity
+    const discountAmount = 0;
+    const finalTotal = Math.max(0, totalPrice - discountAmount);
+
+    const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!stripe || !elements || !email) return;
-
+        setGlobalError(null);
         setIsProcessing(true);
-        setErrorMsg(null);
 
-        // Persist email + items for the success page (use sessionStorage not URL)
         try {
-            sessionStorage.setItem("edma-checkout-email",    email);
-            sessionStorage.setItem("edma-checkout-items",    JSON.stringify(
-                items.map(i => ({ id: i.id, quantity: i.quantity }))
-            ));
-            sessionStorage.setItem("edma-checkout-language", language);
-        } catch { /* ignore */ }
+            // 1. Create Order
+            const orderRes = await fetch("/api/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: items.map(i => ({ id: i.id, quantity: i.quantity, price_sar: i.price_sar })),
+                    payment_method: method,
+                    customer: { name, phone, email },
+                    source: "website"
+                })
+            });
 
-        // Build absolute return URL (handles basePath)
-        const basePath  = process.env.NEXT_PUBLIC_BASE_PATH ?? "/Edma-Perf";
-        const returnUrl = `${window.location.origin}${basePath}/success`;
+            const orderData = await orderRes.json();
 
-        const { error } = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: returnUrl,
-                payment_method_data: {
-                    billing_details: { email },
-                },
-            },
-        });
+            if (!orderRes.ok || orderData.error) {
+                throw new Error(orderData.error || "Failed to create order");
+            }
 
-        // confirmPayment only returns here on error (on success Stripe redirects)
-        if (error) {
-            setErrorMsg(
-                error.type === "card_error" || error.type === "validation_error"
-                    ? (error.message ?? isAr ? "فشل الدفع" : "Payment failed")
-                    : (isAr ? "حدث خطأ غير متوقع" : "An unexpected error occurred")
-            );
+            const { order_id, order_number, redirect_url } = orderData;
+
+            // MOCK GATEWAY REDIRECT
+            if (redirect_url) {
+                // Normally clearCart happens in success flow, but mock payment handles clear in UI
+                router.push(redirect_url);
+                return;
+            }
+
+            // 2. Routing based on gateway
+            if (method === "cash_on_delivery" || method === "bank_transfer") {
+                clearCart();
+                router.push(`/thank-you?order=${order_number}&method=${method}`);
+                return; // halt and redirect
+            }
+
+            // 3. Init Tap Charge
+            const tapRes = await fetch("/api/payment/tap", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    order_id,
+                    total_amount: finalTotal,
+                    customer_name: name,
+                    customer_email: email,
+                    customer_phone: phone,
+                    payment_type: method
+                })
+            });
+
+            const tapData = await tapRes.json();
+
+            if (!tapRes.ok || tapData.error) {
+                throw new Error(tapData.error || "Failed to initialize payment gateway");
+            }
+
+            // Redirect to Tap
+            clearCart();
+            window.location.href = tapData.url;
+
+        } catch (err: any) {
+            setGlobalError(err.message || "An unexpected error occurred.");
+            setFailCount(prev => prev + 1);
             setIsProcessing(false);
         }
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    const handleForceClearCart = () => {
+        clearCart();
+        window.location.reload();
+    };
 
-            {/* Section label */}
-            <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-gradient-to-r from-[#C9A84C]/40 to-transparent" />
-                <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-[0.3em]"} text-[#C9A84C]/70`}>
-                    {isAr ? "تفاصيل الدفع" : "Payment Details"}
-                </span>
-                <div className="h-px flex-1 bg-gradient-to-l from-[#C9A84C]/40 to-transparent" />
-            </div>
-
-            {/* Email input */}
-            <div className="flex flex-col gap-2">
-                <label
-                    htmlFor="checkout-email"
-                    className={`${isAr ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-[0.2em]"} text-[#8B7355]`}
-                >
-                    {isAr ? "البريد الإلكتروني" : "Email Address"}
-                </label>
-                <input
-                    id="checkout-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    dir="ltr"
-                    placeholder={isAr ? "بريدك@مثال.com" : "your@email.com"}
-                    className="w-full px-4 py-3 rounded-lg bg-[#0D0A07] border border-[#C9A84C]/20 text-[#EBE5D9] text-sm placeholder:text-[#5C4033] focus:outline-none focus:border-[#C9A84C]/60 focus:ring-1 focus:ring-[#C9A84C]/20 transition-colors duration-200"
-                />
-            </div>
-
-            {/* Stripe PaymentElement */}
-            <div className="relative">
-                {/* Skeleton while loading */}
-                <AnimatePresence>
-                    {!isReady && (
-                        <motion.div
-                            key="skeleton"
-                            initial={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="absolute inset-0 z-10 flex flex-col gap-3 pointer-events-none"
-                        >
-                            {[80, 50, 110].map((h, i) => (
-                                <div
-                                    key={i}
-                                    className="rounded-lg bg-[#1A0E08] animate-pulse"
-                                    style={{ height: h }}
-                                />
-                            ))}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                <PaymentElement
-                    onReady={() => setIsReady(true)}
-                    options={{ layout: "tabs" }}
-                />
-            </div>
-
-            {/* Error message */}
-            <AnimatePresence>
-                {errorMsg && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
-                        dir={isAr ? "rtl" : "ltr"}
-                    >
-                        <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
-                        </svg>
-                        <span className={isAr ? "font-arabic" : "font-sans"}>{errorMsg}</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Pay button */}
-            <button
-                type="submit"
-                disabled={!stripe || !elements || isProcessing || !email}
-                className="relative w-full py-4 rounded-full overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(201,168,76,0.35)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
-            >
-                <span className="absolute inset-0 bg-gradient-to-r from-[#C9A84C] via-[#E5C84A] to-[#C9A84C]" />
-                <span className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                <span className="relative flex items-center justify-center gap-3">
-                    {isProcessing ? (
-                        <>
-                            <GoldSpinner size={18} />
-                            <span className={`${isAr ? "font-arabic text-base" : "font-sans text-xs uppercase tracking-[0.15em]"} text-[#0D0A07] font-semibold`}>
-                                {isAr ? "جارٍ المعالجة..." : "Processing..."}
-                            </span>
-                        </>
-                    ) : (
-                        <span className={`${isAr ? "font-arabic text-base" : "font-sans text-xs uppercase tracking-[0.15em]"} text-[#0D0A07] font-semibold`}>
-                            {isAr ? `ادفع ${formatPrice(totalPrice)}` : `Pay ${formatPrice(totalPrice)}`}
-                        </span>
-                    )}
-                </span>
-            </button>
-
-            {/* Stripe secure badge */}
-            <p className="text-center text-[#5C4033] text-[10px] tracking-wider font-sans flex items-center justify-center gap-1.5">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 1L3 5v6c0 5.25 3.75 10.17 9 11.34C17.25 21.17 21 16.25 21 11V5L12 1zm0 6a2 2 0 110 4 2 2 0 010-4zm3 8H9v-1c0-2 4-3.1 6-1.4V15z"/>
-                </svg>
-                {isAr ? "مدفوعات آمنة بواسطة Stripe" : "Secured by Stripe"}
-            </p>
-        </form>
-    );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
-export default function CheckoutPage() {
-    const { items, totalPrice } = useCart();
-    const { language }          = useLanguage();
-    const router                = useRouter();
-    const isAr                  = language === "ar";
-
-    const [clientSecret, setClientSecret] = useState<string | null>(null);
-    const [fetchError,   setFetchError]   = useState<string | null>(null);
-    const [email,        setEmail]        = useState("");
-
-    // If cart is empty, redirect to shop
-    useEffect(() => {
-        if (items.length === 0) router.replace("/shop");
-    }, [items, router]);
-
-    // Fetch PaymentIntent once on mount
-    const fetchedRef = useRef(false);
-    useEffect(() => {
-        if (items.length === 0 || fetchedRef.current) return;
-        fetchedRef.current = true;
-
-        fetch("/Edma-Perf/api/create-payment-intent", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({
-                items: items.map(i => ({ id: i.id, quantity: i.quantity })),
-            }),
-        })
-            .then(r => r.json())
-            .then(data => {
-                if (data.clientSecret) {
-                    setClientSecret(data.clientSecret);
-                } else {
-                    setFetchError(data.error ?? "Failed to initialise payment.");
-                }
-            })
-            .catch(() => setFetchError("Network error. Please try again."));
-    }, [items]);
-
-    if (items.length === 0) return null; // handled by redirect above
-
-    return (
-        <main
-            className="min-h-screen bg-[#0A0806] text-[#EBE5D9]"
-            dir={isAr ? "rtl" : "ltr"}
-        >
-            {/* ── Page header ───────────────────────────────────────────── */}
-            <div className="border-b border-[#C9A84C]/10 px-6 md:px-12 py-6 flex items-center justify-between">
-                <button
-                    onClick={() => router.back()}
-                    className="flex items-center gap-2 text-[#8B7355] hover:text-[#C9A84C] transition-colors duration-200"
-                >
-                    <svg className={`w-4 h-4 ${isAr ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-wider"}`}>
-                        {isAr ? "رجوع" : "Back"}
-                    </span>
+    if (items.length === 0) {
+        return (
+            <div className="min-h-screen py-32 flex flex-col items-center justify-center text-center" dir={isAr ? "rtl" : "ltr"}>
+                <p className="text-[#C9A84C] text-xl mb-4">{isAr ? "السلة فارغة" : "Cart is empty"}</p>
+                <button onClick={() => router.push('/shop')} className="text-[#EBE5D9] opacity-70 hover:opacity-100 underline">
+                    {isAr ? "العودة للتسوق" : "Return to Shop"}
                 </button>
-
-                <span className={`${isAr ? "font-arabic text-base" : "font-serif text-lg"} tracking-widest text-[#EBE5D9]/80`}>
-                    {isAr ? "إتمام الشراء" : "Checkout"}
-                </span>
-
-                {/* Brand */}
-                <span className="text-[#C9A84C]/60 text-xs tracking-[0.4em] font-sans uppercase hidden md:block">
-                    EDMA
-                </span>
             </div>
+        );
+    }
 
-            {/* ── Content ───────────────────────────────────────────────── */}
-            <div className="max-w-5xl mx-auto px-6 md:px-12 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-12 lg:gap-16">
+    return (
+        <main className="min-h-screen bg-[#080604] py-24 md:py-32 outline-none" dir={isAr ? "rtl" : "ltr"}>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h1 className={`${isAr ? 'font-arabic font-light' : 'font-serif'} text-4xl text-[#EBE5D9] mb-3 tracking-wide`}>
+                        {isAr ? 'إتمام الطلب' : 'Checkout'}
+                    </h1>
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#C9A84C]/50" />
+                        <span className="font-serif text-[#C9A84C] text-sm tracking-[0.2em]">EDMA SECURE</span>
+                        <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#C9A84C]/50" />
+                    </div>
+                </div>
 
-                    {/* ── Left / top: order summary ──────────────────────── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="p-6 md:p-8 rounded-2xl border border-[#C9A84C]/10 bg-[#0D0A07] self-start"
-                    >
-                        <OrderSummary language={language} />
+                <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.8fr] gap-8 lg:gap-16">
+                    {/* LEFT: Order Summary */}
+                    <motion.div initial={{ opacity: 0, x: isAr ? 20 : -20 }} animate={{ opacity: 1, x: 0 }} className="p-6 md:p-8 rounded-2xl border border-[#C9A84C]/10 bg-[#0D0A07]/50 self-start">
+                        <h2 className={`text-[#C9A84C]/70 mb-6 ${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-[0.3em]"}`}>
+                            {isAr ? "ملخص الطلب" : "Order Summary"}
+                        </h2>
+                        <ul className="flex flex-col gap-4 mb-6">
+                            {items.map(item => (
+                                <li key={item.id} className="flex items-center gap-4">
+                                    <div className="relative w-14 h-14 bg-white/5 border border-[#C9A84C]/20 rounded-lg overflow-hidden flex-shrink-0">
+                                        <Image src={item.image} alt={item.name[language]} fill sizes="56px" className="object-contain p-1.5" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[#EBE5D9] font-light truncate">{item.name[language]}</p>
+                                        <p className="text-[#8B7355] text-xs">Qty: {item.quantity}</p>
+                                    </div>
+                                    <p className="text-[#C9A84C] text-sm tabular-nums flex-shrink-0">
+                                        {formatPrice(item.price_sar * item.quantity)}
+                                    </p>
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="h-px bg-gradient-to-r from-transparent via-[#C9A84C]/20 to-transparent mb-6" />
+                        <div className="flex justify-between items-end mb-2">
+                            <span className="text-[#EBE5D9]/50 text-sm">{isAr ? "المجموع الفرعي" : "Subtotal"}</span>
+                            <span className="text-[#EBE5D9] tabular-nums">{formatPrice(totalPrice)}</span>
+                        </div>
+                        <div className="flex justify-between items-end mb-6">
+                            <span className="text-[#EBE5D9]/50 text-sm">{isAr ? "التوصيل" : "Shipping"}</span>
+                            <span className="text-green-400 text-sm">{isAr ? "مجانًا" : "Free"}</span>
+                        </div>
+                        <div className="flex justify-between items-end pt-4 border-t border-[#C9A84C]/20">
+                            <span className="text-[#C9A84C] font-semibold">{isAr ? "الإجمالي" : "Total"}</span>
+                            <span className="text-[#C9A84C] font-semibold text-lg tabular-nums">
+                                {formatPrice(finalTotal)}
+                            </span>
+                        </div>
                     </motion.div>
 
-                    {/* ── Right / bottom: payment form ───────────────────── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="p-6 md:p-8 rounded-2xl border border-[#C9A84C]/10 bg-[#0D0A07] self-start"
-                    >
-                        {fetchError ? (
-                            /* ── Error state ─────────────────────────── */
-                            <div className="flex flex-col items-center gap-4 py-8 text-center">
-                                <div className="w-12 h-12 rounded-full border border-red-500/30 flex items-center justify-center text-red-400">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v4m0 4h.01M12 3a9 9 0 110 18A9 9 0 0112 3z" />
-                                    </svg>
+                    {/* RIGHT: Payment Form */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-6 md:p-8 rounded-2xl border border-[#C9A84C]/10 bg-[#0D0A07] self-start">
+                        <form onSubmit={handleCheckout} className="flex flex-col gap-8">
+                            {globalError && (
+                                <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex flex-col gap-2">
+                                    <p>{globalError}</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => { clearCart(); router.push('/shop'); }}
+                                        className="self-start mt-1 text-xs px-4 py-2 bg-[#C9A84C]/20 hover:bg-[#C9A84C]/30 text-[#C9A84C] rounded transition-colors"
+                                    >
+                                        تحديث السلة وتصحيح البيانات
+                                    </button>
+                                    {failCount >= 2 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleForceClearCart}
+                                            className="self-start text-xs px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded transition-colors"
+                                        >
+                                            {isAr ? "إفراغ السلة وتحديث الصفحة" : "Force Clear Cart & Refresh"}
+                                        </button>
+                                    )}
                                 </div>
-                                <p className={`${isAr ? "font-arabic" : "font-sans"} text-red-400/80 text-sm`}>{fetchError}</p>
-                                <button
-                                    onClick={() => { fetchedRef.current = false; setFetchError(null); }}
-                                    className={`${isAr ? "font-arabic text-sm" : "font-sans text-xs uppercase tracking-wider"} text-[#C9A84C] border border-[#C9A84C]/30 px-6 py-2.5 rounded-full hover:bg-[#C9A84C]/10 transition-colors`}
-                                >
-                                    {isAr ? "إعادة المحاولة" : "Try Again"}
-                                </button>
-                            </div>
+                            )}
 
-                        ) : !clientSecret ? (
-                            /* ── Loading skeleton ────────────────────── */
-                            <div className="flex flex-col gap-5 py-4">
-                                <div className="flex items-center justify-center gap-3 py-4 text-[#C9A84C]/60">
-                                    <GoldSpinner size={20} />
-                                    <span className={`${isAr ? "font-arabic text-sm" : "font-sans text-xs uppercase tracking-wider"} text-[#8B7355]`}>
-                                        {isAr ? "جارٍ التحميل..." : "Loading payment form..."}
-                                    </span>
-                                </div>
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-12 rounded-lg bg-[#1A0E08] animate-pulse" />
-                                ))}
-                            </div>
-
-                        ) : clientSecret.startsWith("pi_mock_") ? (
-                            /* ── Mock bypass (Stripe key is placeholder) ─ */
-                            <MockBypassForm
-                                email={email}
-                                setEmail={setEmail}
-                                language={language}
-                            />
-
-                        ) : (
-                            /* ── Real Stripe PaymentElement ──────────── */
-                            <>
-                                {/* Test card reminder — shown when pk_test_ key is active */}
-                                {IS_STRIPE_TEST && (
-                                    <div className="flex items-start gap-3 px-4 py-3 mb-5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                        <svg className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div className="flex flex-col gap-0.5">
-                                            <p className="font-sans text-[10px] uppercase tracking-wider text-blue-400 font-semibold">Test Card</p>
-                                            <p className="font-mono text-xs text-blue-300/80">4242 4242 4242 4242</p>
-                                            <p className="font-sans text-[10px] text-blue-300/60">Any future date · Any CVC · Any ZIP</p>
-                                        </div>
+                            {/* Section 1: Customer Details */}
+                            <div>
+                                <h3 className={`text-[#C9A84C]/70 mb-5 ${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-[0.3em]"}`}>
+                                    {isAr ? "بيانات العميل" : "Customer Details"}
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-2">
+                                        <label className={`text-[#8B7355] ${isAr ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-[0.2em]"}`}>{isAr ? "الاسم الكامل" : "Full Name"}</label>
+                                        <input required value={name} onChange={e => setName(e.target.value)} type="text" className="w-full px-4 py-3 rounded-lg bg-[#120E0A] border border-[#C9A84C]/20 text-[#EBE5D9] text-sm focus:outline-none focus:border-[#C9A84C]/60" />
                                     </div>
-                                )}
-                                <Elements
-                                    stripe={stripePromise}
-                                    options={{
-                                        clientSecret,
-                                        appearance: STRIPE_APPEARANCE,
-                                        locale: language === "ar" ? "ar" : "en",
-                                    }}
-                                >
-                                    <PaymentForm
-                                        email={email}
-                                        setEmail={setEmail}
-                                        totalPrice={totalPrice}
-                                        language={language}
-                                    />
-                                </Elements>
-                            </>
-                        )}
+                                    <div className="flex flex-col gap-2">
+                                        <label className={`text-[#8B7355] ${isAr ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-[0.2em]"}`}>{isAr ? "رقم الهاتف" : "Phone"}</label>
+                                        <input required value={phone} onChange={e => setPhone(e.target.value)} type="tel" dir="ltr" className="w-full px-4 py-3 rounded-lg bg-[#120E0A] border border-[#C9A84C]/20 text-[#EBE5D9] text-sm focus:outline-none focus:border-[#C9A84C]/60" />
+                                    </div>
+                                    <div className="flex flex-col gap-2 md:col-span-2">
+                                        <label className={`text-[#8B7355] ${isAr ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-[0.2em]"}`}>{isAr ? "البريد الإلكتروني" : "Email"}</label>
+                                        <input required value={email} onChange={e => setEmail(e.target.value)} type="email" dir="ltr" className="w-full px-4 py-3 rounded-lg bg-[#120E0A] border border-[#C9A84C]/20 text-[#EBE5D9] text-sm focus:outline-none focus:border-[#C9A84C]/60" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section 2: Payment Method */}
+                            <div>
+                                <h3 className={`text-[#C9A84C]/70 mb-5 ${isAr ? "font-arabic text-sm" : "font-sans text-[10px] uppercase tracking-[0.3em]"}`}>
+                                    {isAr ? "طريقة الدفع" : "Payment Method"}
+                                </h3>
+                                <div className="flex flex-col gap-3">
+                                    {PAYMENT_METHODS.map(pm => {
+                                        const isSelected = method === pm.id;
+                                        return (
+                                            <button
+                                                key={pm.id}
+                                                type="button"
+                                                onClick={() => setMethod(pm.id)}
+                                                className={`relative w-full flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-300 overflow-hidden ${isSelected
+                                                    ? 'bg-[#C9A84C]/10 border-[#C9A84C] shadow-[0_0_15px_rgba(201,168,76,0.1)]'
+                                                    : 'bg-[#120E0A] border-[#C9A84C]/10 hover:border-[#C9A84C]/30 opacity-70 hover:opacity-100'
+                                                    }`}
+                                            >
+                                                {isSelected && <motion.div layoutId="payBg" className="absolute inset-0 bg-gradient-to-r from-[#C9A84C]/5 to-transparent pointer-events-none" />}
+
+                                                <div className="relative text-2xl flex-shrink-0 w-8 text-center">{pm.icon}</div>
+                                                <div className="relative flex-1 text-right md:text-start" dir={isAr ? "rtl" : "ltr"}>
+                                                    <span className={`block font-medium ${isAr ? 'font-arabic text-sm' : 'text-sm'} ${isSelected ? 'text-[#C9A84C]' : 'text-[#EBE5D9]'}`}>
+                                                        {isAr ? pm.title : pm.titleEn}
+                                                    </span>
+                                                </div>
+
+                                                {/* Custom Radio Circle */}
+                                                <div className={`relative w-5 h-5 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${isSelected ? 'border-[#C9A84C]' : 'border-[#8B7355]/50'
+                                                    }`}>
+                                                    {isSelected && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-2.5 h-2.5 rounded-full bg-[#C9A84C]" />}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Submit */}
+                            <button
+                                type="submit"
+                                disabled={isProcessing}
+                                className="relative w-full py-4 rounded-full overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                            >
+                                <span className="absolute inset-0 bg-gradient-to-r from-[#C9A84C] via-[#E5C84A] to-[#C9A84C]" />
+                                <span className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                                <span className="relative flex items-center justify-center gap-3">
+                                    {isProcessing ? (
+                                        <svg className="animate-spin h-5 w-5 text-[#0D0A07]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12A8 8 0 018 4V0A12 12 0 000 12h4zm2 5.291a7.962 7.962 0 01-2-5.291H0a11.962 11.962 0 003 9.09l1-3.799z"></path></svg>
+                                    ) : (
+                                        <span className={`${isAr ? "font-arabic text-base" : "font-sans text-xs uppercase tracking-[0.15em]"} text-[#0D0A07] font-semibold`}>
+                                            {isAr ? "تأكيد الطلب والدفع" : "Confirm Order & Pay"}
+                                        </span>
+                                    )}
+                                </span>
+                            </button>
+                        </form>
                     </motion.div>
                 </div>
             </div>

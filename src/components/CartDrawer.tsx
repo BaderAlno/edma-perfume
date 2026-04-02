@@ -161,16 +161,13 @@ export default function CartDrawer() {
                                                 <div className="flex gap-4">
 
                                                     {/* Thumbnail */}
-                                                    <div
-                                                        className="relative flex-shrink-0 w-[72px] h-[72px] rounded-lg overflow-hidden"
-                                                        style={{ background: `${item.accent}18` }}
-                                                    >
+                                                    <div className="relative w-16 h-16 bg-[#1A1410] rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
                                                         <Image
                                                             src={item.image}
                                                             alt={item.name[language]}
                                                             fill
-                                                            sizes="72px"
-                                                            className="object-contain p-2"
+                                                            className="object-cover"
+                                                            sizes="64px"
                                                         />
                                                     </div>
 
@@ -184,7 +181,7 @@ export default function CartDrawer() {
                                                                     {item.name[language]}
                                                                 </p>
                                                                 <p className={`${language === "ar" ? "font-arabic text-xs" : "font-sans text-[10px] uppercase tracking-wider"} text-[#C9A84C]/70 mt-0.5`}>
-                                                                    {formatPrice(item.priceValue)}
+                                                                    {formatPrice(item.price_sar)}
                                                                 </p>
                                                             </div>
                                                             <button
@@ -215,7 +212,7 @@ export default function CartDrawer() {
                                                                 />
                                                             </div>
                                                             <p className={`${language === "ar" ? "font-arabic text-sm" : "font-sans text-xs"} text-[#EBE5D9]/70 tabular-nums`}>
-                                                                {formatPrice(item.priceValue * item.quantity)}
+                                                                {formatPrice(item.price_sar * item.quantity)}
                                                             </p>
                                                         </div>
                                                     </div>

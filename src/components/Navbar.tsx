@@ -7,29 +7,35 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
-import { useCurrency, type Currency } from "@/context/CurrencyContext";
+import { useCurrency } from "@/context/CurrencyContext";
+import CurrencySwitcher from "@/components/CurrencySwitcher";
 import { useAuth } from "@/context/AuthContext";
 import { translations } from "@/i18n/translations";
-
-const CURRENCIES: Currency[] = ["SAR", "KWD", "USD"];
+import { getCachedAnnouncement } from "@/lib/actions/settings";
 
 export default function Navbar() {
-    const [isScrolled,  setIsScrolled]  = useState(false);
-    const [mobileOpen,  setMobileOpen]  = useState(false);
-    const [currencyOpen, setCurrencyOpen] = useState(false);
-    const { language, toggleLanguage }  = useLanguage();
-    const { totalItems, openCart }      = useCart();
-    const { currency, setCurrency }     = useCurrency();
-    const { isLoggedIn, logout }        = useAuth();
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [announcement, setAnnouncement] = useState<string | null>(null);
+
+    const { language, toggleLanguage } = useLanguage();
+    const { totalItems, openCart } = useCart();
+    const { isLoggedIn, logout } = useAuth();
     const pathname = usePathname();
     const t = translations.nav;
 
+    useEffect(() => {
+        setMounted(true);
+        getCachedAnnouncement().then(text => setAnnouncement(text)).catch(console.error);
+    }, []);
+
     const navLinks = [
-        { name: t.story[language],    href: "/#story" },
-        { name: t.topNotes[language], href: "/#top-notes" },
-        { name: t.heart[language],    href: "/#heart" },
-        { name: t.base[language],     href: "/#base" },
-        { name: t.shop[language],     href: "/shop" },
+        { name: t.story[language], href: "/brand-story" },
+        { name: t.topNotes[language], href: "/notes/top" },
+        { name: t.heart[language], href: "/notes/heart" },
+        { name: t.base[language], href: "/notes/base" },
+        { name: t.shop[language], href: "/shop" },
     ];
 
     useEffect(() => {
@@ -42,24 +48,37 @@ export default function Navbar() {
     // Close mobile menu on route change
     useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-    // Close currency dropdown on outside click
-    useEffect(() => {
-        if (!currencyOpen) return;
-        const handler = () => setCurrencyOpen(false);
-        document.addEventListener("click", handler, { capture: true });
-        return () => document.removeEventListener("click", handler, { capture: true });
-    }, [currencyOpen]);
+    const isActive = (href: string) => {
+        if (href === "/") return pathname === "/";
+        return pathname?.startsWith(href);
+    };
 
-    const isActive = (href: string) =>
-        href === "/shop" ? pathname === "/shop" : false;
+    const isAdmin = pathname?.toLowerCase().startsWith('/admin');
+
+    // Wait until mounted to unmount to avoid Next.js Hydration freeze
+    if (mounted && isAdmin) return null;
 
     return (
-        <>
+        <div className={isAdmin ? 'hidden !important' : ''} style={{ display: isAdmin ? 'none' : 'block' }}>
+            <AnimatePresence>
+                {announcement && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="fixed top-0 left-0 right-0 z-[60] bg-[#C9A84C] text-[#0A0806] text-xs font-arabic py-2 text-center font-medium tracking-wide shadow-md"
+                        dir="rtl"
+                    >
+                        {announcement}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <nav
                 role="navigation"
                 aria-label={language === "ar" ? "التنقل الرئيسي" : "Main navigation"}
                 className={clsx(
-                    "fixed top-0 left-0 right-0 z-50 transition-all duration-500 flex items-center justify-between px-6 md:px-12 h-16",
+                    "fixed left-0 right-0 z-50 transition-all duration-500 flex items-center justify-between px-6 md:px-12 h-16",
+                    announcement ? "top-8" : "top-0",
                     isScrolled
                         ? "bg-[#0A0806]/85 backdrop-blur-md border-b border-white/[0.04] shadow-[0_1px_20px_rgba(0,0,0,0.3)]"
                         : "bg-transparent py-2"
@@ -159,49 +178,7 @@ export default function Navbar() {
                     </button>
 
                     {/* Currency selector */}
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            onClick={() => setCurrencyOpen(o => !o)}
-                            aria-expanded={currencyOpen}
-                            aria-haspopup="listbox"
-                            aria-label="Select currency"
-                            className="flex items-center gap-1 text-xs tracking-widest font-light transition-colors duration-300 px-2 py-1 rounded-md hover:bg-white/5 text-[#D4AF37]"
-                        >
-                            {currency}
-                            <svg className={`w-2.5 h-2.5 transition-transform duration-200 ${currencyOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 10 6" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M1 1l4 4 4-4" />
-                            </svg>
-                        </button>
-                        <AnimatePresence>
-                            {currencyOpen && (
-                                <motion.ul
-                                    role="listbox"
-                                    aria-label="Currency options"
-                                    initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="absolute top-full mt-2 right-0 bg-[#0A0806]/95 backdrop-blur-xl border border-[#D4AF37]/15 rounded-lg overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.5)] min-w-[72px] z-50"
-                                >
-                                    {CURRENCIES.map((c) => (
-                                        <li
-                                            key={c}
-                                            role="option"
-                                            aria-selected={c === currency}
-                                            onClick={() => { setCurrency(c); setCurrencyOpen(false); }}
-                                            className={`px-4 py-2 text-xs tracking-widest cursor-pointer transition-colors duration-150 ${
-                                                c === currency
-                                                    ? "text-[#D4AF37] bg-[#D4AF37]/10"
-                                                    : "text-[#EBE5D9]/55 hover:text-[#EBE5D9] hover:bg-white/5"
-                                            }`}
-                                        >
-                                            {c}
-                                        </li>
-                                    ))}
-                                </motion.ul>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                    <CurrencySwitcher />
 
                     {/* Cart icon */}
                     <button
@@ -333,6 +310,6 @@ export default function Navbar() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </>
+        </div>
     );
 }

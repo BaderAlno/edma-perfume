@@ -16,9 +16,17 @@
 # next.js
 /.next/
 /out/
+out */
 
 # production
 /build
+
+# build archives & zip exports
+*.zip
+
+# large media binaries (use Git LFS or external hosting)
+public/*.mp4
+public/*.mov
 
 # misc
 .DS_Store
