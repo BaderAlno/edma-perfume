@@ -22,9 +22,6 @@ const EMPTY_FORM = {
     description_ar: '',
     quote_en: '',
     quote_ar: '',
-    top_notes: '',
-    heart_notes: '',
-    base_notes: '',
     is_active: true,
 };
 
@@ -63,9 +60,6 @@ export default function ProductModal({ product, onClose, onSaved }: Props) {
         description_ar: product?.description_ar ?? EMPTY_FORM.description_ar,
         quote_en: product?.quote_en ?? EMPTY_FORM.quote_en,
         quote_ar: product?.quote_ar ?? EMPTY_FORM.quote_ar,
-        top_notes: product?.top_notes ? product.top_notes.join(', ') : EMPTY_FORM.top_notes,
-        heart_notes: product?.heart_notes ? product.heart_notes.join(', ') : EMPTY_FORM.heart_notes,
-        base_notes: product?.base_notes ? product.base_notes.join(', ') : EMPTY_FORM.base_notes,
         is_active: product?.is_active ?? EMPTY_FORM.is_active,
     });
 
@@ -144,9 +138,6 @@ export default function ProductModal({ product, onClose, onSaved }: Props) {
                     description_ar: form.description_ar.trim() || null,
                     quote_en: form.quote_en.trim() || null,
                     quote_ar: form.quote_ar.trim() || null,
-                    top_notes: form.top_notes.split(',').map(s => s.trim()).filter(Boolean),
-                    heart_notes: form.heart_notes.split(',').map(s => s.trim()).filter(Boolean),
-                    base_notes: form.base_notes.split(',').map(s => s.trim()).filter(Boolean),
                     is_active: form.is_active,
                     ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
                 };
@@ -384,42 +375,7 @@ export default function ProductModal({ product, onClose, onSaved }: Props) {
                         </div>
                     </div>
 
-                    {/* ── Note Tags ──────────────────────────────────────────── */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <div>
-                            <label style={{ ...labelStyle, direction: 'ltr', textAlign: 'left' }}>Base Notes</label>
-                            <input
-                                type="text"
-                                placeholder="oud, musk..."
-                                value={form.base_notes}
-                                onChange={e => set('base_notes', e.target.value)}
-                                style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
-                                title="كلمات مفتاحية مفصولة بفاصلة"
-                            />
-                        </div>
-                        <div>
-                            <label style={{ ...labelStyle, direction: 'ltr', textAlign: 'left' }}>Heart Notes</label>
-                            <input
-                                type="text"
-                                placeholder="rose, jasmine..."
-                                value={form.heart_notes}
-                                onChange={e => set('heart_notes', e.target.value)}
-                                style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
-                                title="كلمات مفتاحية مفصولة بفاصلة"
-                            />
-                        </div>
-                        <div>
-                            <label style={{ ...labelStyle, direction: 'ltr', textAlign: 'left' }}>Top Notes</label>
-                            <input
-                                type="text"
-                                placeholder="citrus, fresh..."
-                                value={form.top_notes}
-                                onChange={e => set('top_notes', e.target.value)}
-                                style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
-                                title="كلمات مفتاحية مفصولة بفاصلة"
-                            />
-                        </div>
-                    </div>
+
 
                     {/* ── Active toggle ─────────────────────────────────────── */}
                     <div className="flex items-center justify-between py-1">

@@ -348,7 +348,7 @@ export default function BaseNotesPage() {
                                                     {isAr ? (product.name_ar || product.name) : (product.name || product.name_ar)}
                                                 </h3>
                                                 <span className="text-[#C9A84C] text-lg font-sans tabular-nums mt-auto">
-                                                    {formatPrice(Number(product.price_sar || 0))}
+                                                    {formatPrice(Number(product.price_sar || (product as any).price || 0))}
                                                 </span>
                                             </div>
                                         </Link>

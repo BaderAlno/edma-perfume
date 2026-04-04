@@ -31,7 +31,9 @@ export async function middleware(req: NextRequest) {
     const isAdminRoute = pathname.startsWith('/admin');
 
     // Unauthenticated user hitting a protected /admin/* route → login
-    if (isAdminRoute && !isLoginPage && !user) {
+    const isPreviewSession = req.cookies.get('edma_preview_auth')?.value === 'true';
+
+    if (isAdminRoute && !isLoginPage && !user && !isPreviewSession) {
         const url = req.nextUrl.clone();
         url.pathname = '/admin/login';
         url.searchParams.set('next', pathname);

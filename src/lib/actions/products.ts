@@ -70,14 +70,11 @@ export async function getProducts(): Promise<ProductForShop[]> {
         id: p.id,
         name: p.name,
         name_ar: p.name_ar,
-        price_sar: Number(p.price_sar || p.price),
+        price_sar: Number(p.price_sar || (p as any).price || 0),
         description_en: p.description_en,
         description_ar: p.description_ar,
         quote_en: p.quote_en,
         quote_ar: p.quote_ar,
-        top_notes: p.top_notes,
-        heart_notes: p.heart_notes,
-        base_notes: p.base_notes,
         image_url: p.image_url,
         stock_quantity: p.stock_quantity,
         is_active: p.is_active,
@@ -100,14 +97,11 @@ export async function getProductById(id: string): Promise<ProductForShop | null>
         id: data.id,
         name: data.name,
         name_ar: data.name_ar,
-        price_sar: Number(data.price_sar || data.price),
+        price_sar: Number(data.price_sar || (data as any).price || 0),
         description_en: data.description_en,
         description_ar: data.description_ar,
         quote_en: data.quote_en,
         quote_ar: data.quote_ar,
-        top_notes: data.top_notes,
-        heart_notes: data.heart_notes,
-        base_notes: data.base_notes,
         image_url: data.image_url,
         stock_quantity: data.stock_quantity,
         is_active: data.is_active,
@@ -168,14 +162,11 @@ export async function getAllProductsAdmin(): Promise<ProductAdmin[]> {
         id: p.id,
         name: p.name,
         name_ar: p.name_ar,
-        price_sar: Number(p.price_sar),
+        price_sar: Number(p.price_sar || (p as any).price || 0),
         description_en: p.description_en ?? null,
         description_ar: p.description_ar ?? null,
         quote_en: p.quote_en ?? null,
         quote_ar: p.quote_ar ?? null,
-        top_notes: p.top_notes ?? [],
-        heart_notes: p.heart_notes ?? [],
-        base_notes: p.base_notes ?? [],
         image_url: p.image_url ?? null,
         stock_quantity: p.stock_quantity,
         low_stock_threshold: p.low_stock_threshold,
@@ -201,9 +192,6 @@ export async function createProduct(input: CreateProductInput): Promise<ProductA
             description_ar: input.description_ar ?? null,
             quote_en: input.quote_en ?? null,
             quote_ar: input.quote_ar ?? null,
-            top_notes: input.top_notes ?? [],
-            heart_notes: input.heart_notes ?? [],
-            base_notes: input.base_notes ?? [],
             image_url: input.image_url ?? null,
             is_active: input.is_active ?? true,
         } as any)
@@ -216,14 +204,11 @@ export async function createProduct(input: CreateProductInput): Promise<ProductA
         id: data.id,
         name: data.name,
         name_ar: data.name_ar,
-        price_sar: Number(data.price_sar),
+        price_sar: Number(data.price_sar || (data as any).price || 0),
         description_en: data.description_en ?? null,
         description_ar: data.description_ar ?? null,
         quote_en: data.quote_en ?? null,
         quote_ar: data.quote_ar ?? null,
-        top_notes: data.top_notes ?? [],
-        heart_notes: data.heart_notes ?? [],
-        base_notes: data.base_notes ?? [],
         image_url: data.image_url ?? null,
         stock_quantity: data.stock_quantity,
         low_stock_threshold: data.low_stock_threshold,
@@ -250,9 +235,6 @@ export async function updateProduct(
     if (input.description_ar !== undefined) patch.description_ar = input.description_ar;
     if (input.quote_en !== undefined) patch.quote_en = input.quote_en;
     if (input.quote_ar !== undefined) patch.quote_ar = input.quote_ar;
-    if (input.top_notes !== undefined) patch.top_notes = input.top_notes;
-    if (input.heart_notes !== undefined) patch.heart_notes = input.heart_notes;
-    if (input.base_notes !== undefined) patch.base_notes = input.base_notes;
     if (input.image_url !== undefined) patch.image_url = input.image_url;
     if (input.is_active !== undefined) patch.is_active = input.is_active;
 

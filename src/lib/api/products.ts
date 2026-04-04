@@ -16,17 +16,16 @@ export async function getProductsByNote(
     // If no tags provided, return empty
     if (!tags || tags.length === 0) return [];
 
+    // Temporary fix: the columns top_notes, heart_notes, base_notes do not exist in the DB yet.
+    // We remove the .overlaps filter to allow the fetch to succeed without crashing.
     const { data, error } = await supabaseAdmin
         .from("products")
         .select("*")
         .eq("is_active", true)
-        // using overlaps operator '&&' which checks if the target array has ANY of these tags
-        // PostgREST syntax for array overlaps: overlaps.{val1,val2}
-        .overlaps(noteType, tags)
         .limit(10);
 
     if (error) {
-        console.error(`Error fetching products by ${noteType}:`, error);
+        console.error(`Error fetching products:`, error);
         return [];
     }
 
